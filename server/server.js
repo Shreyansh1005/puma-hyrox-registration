@@ -10,7 +10,11 @@ const axios = require('axios'); // Required for Fast2SMS API requests
 const { ServerApiVersion } = require('mongodb');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allows requests from Vercel and localhost
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(bodyParser.json());
 
 if (!process.env.MONGO_URI) {

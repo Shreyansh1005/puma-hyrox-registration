@@ -22,7 +22,7 @@ function Review() {
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/register', data);
+      const res = await axios.post('https://puma-hyrox-backend.onrender.com/api/register', data);
       navigate('/success', { state: { referenceId: res.data.referenceId } });
     } catch (err) {
       // Fallback mock confirmation if local API isn't running
