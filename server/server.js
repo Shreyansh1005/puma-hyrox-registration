@@ -19,7 +19,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 const twilio = require('twilio');
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getMessaging } = require('firebase-admin/messaging');
@@ -125,6 +125,7 @@ const Registration = mongoose.model('Registration', registrationSchema);
 app.get('/', (req, res) => {
   res.status(200).send('⚡ PUMA X HYROX API Service is Running.');
 });
+
 // GET Registration Details by Reference ID
 app.get('/api/registration/:referenceId', async (req, res) => {
   try {
@@ -147,10 +148,16 @@ app.post('/api/register', async (req, res) => {
     const { name, contact, email, age, gender, date, timeSlot, fcmToken } = req.body;
     const referenceId = 'PUMA-HYROX-' + Date.now().toString().slice(-6);
 
+    // Safeguard: Format contact number to E.164 (+91...)
+    let formattedContact = contact ? contact.toString().trim() : '';
+    if (formattedContact && !formattedContact.startsWith('+')) {
+      formattedContact = `+91${formattedContact.replace(/\D/g, '')}`;
+    }
+
     // 1. Save to MongoDB first
     const newReg = new Registration({
       name,
-      contact,
+      contact: formattedContact,
       email,
       age,
       gender,
@@ -161,7 +168,7 @@ app.post('/api/register', async (req, res) => {
 
     await newReg.save();
 
-    // 2. RESPOND IMMEDIATELY TO FRONTEND (Instant transition to Stage 5!)
+    // 2. RESPOND IMMEDIATELY TO FRONTEND
     res.status(201).json({
       message: 'Registered successfully',
       referenceId,
@@ -169,80 +176,81 @@ app.post('/api/register', async (req, res) => {
     });
 
     // 3. SEND NOTIFICATIONS ASYNCHRONOUSLY IN BACKGROUND
-    // 3. SEND NOTIFICATIONS ASYNCHRONOUSLY IN BACKGROUND
-(async () => {
-  console.log(`📨 Starting background notifications for ${referenceId}`);
+    (async () => {
+      console.log(`📨 Starting background notifications for ${referenceId}`);
 
-  // FCM Push
-  if (fcmToken && firebaseInitialized) {
-    try {
-      await getMessaging().send({
-        token: fcmToken,
-        notification: {
-          title: '⚡ PUMA X HYROX Registration Confirmed!',
-          body: `Hi ${name}, your spot is locked in! Ref: ${referenceId}`,
-        },
-        data: { referenceId, date, timeSlot }
-      });
-      console.log('✅ FCM Push sent');
-    } catch (err) {
-      console.error('❌ FCM Error:', err.message);
-    }
-  }
+      // FCM Push
+      if (fcmToken && firebaseInitialized) {
+        try {
+          await getMessaging().send({
+            token: fcmToken,
+            notification: {
+              title: '⚡ PUMA X HYROX Registration Confirmed!',
+              body: `Hi ${name}, your spot is locked in! Ref: ${referenceId}`,
+            },
+            data: { referenceId, date, timeSlot }
+          });
+          console.log('✅ FCM Push sent');
+        } catch (err) {
+          console.error('❌ FCM Error:', err.message);
+        }
+      }
 
-  // Email with SendGrid
-  if (process.env.SENDGRID_API_KEY) {
-    try {
-      const sgMail = require('@sendgrid/mail');
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      // Lead Creation via MailBluster API
+      const mailblusterKey = process.env.MAILBLUSTER_API_KEY ? process.env.MAILBLUSTER_API_KEY.trim() : '';
+      if (mailblusterKey) {
+        try {
+          await axios.post(
+            'https://api.mailbluster.com/api/leads',
+            {
+              email: email,
+              subscribed: true,
+              firstName: name,
+              meta: {
+                phone: formattedContact,
+                age: age,
+                gender: gender,
+                referenceId: referenceId,
+                sessionDate: date,
+                timeSlot: timeSlot
+              },
+              tags: ['PUMA HYROX 2026']
+            },
+            {
+              headers: {
+                'Authorization': mailblusterKey,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          console.log('✅ MailBluster Lead created successfully');
+        } catch (err) {
+          console.error('❌ MailBluster Error:', err.response?.data || err.message);
+        }
+      } else {
+        console.warn('⚠️ MAILBLUSTER_API_KEY not found in environment variables');
+      }
 
-      await sgMail.send({
-        to: email,
-        from: {
-          email: 'dubeyshreyansh2003@gmail.com',
-          name: 'PUMA X HYROX'
-        },
-        subject: '⚡ PUMA X HYROX Registration Confirmed',
-        html: `
-          <h2>Registration Confirmed!</h2>
-          <p>Hi ${name},</p>
-          <p>Your booking <strong>Ref: ${referenceId}</strong> is confirmed.</p>
-          <p><strong>Date:</strong> ${date} | <strong>Time:</strong> ${timeSlot}</p>
-        `
-      });
-      console.log('✅ SendGrid Email sent successfully');
-    } catch (err) {
-      console.error('❌ SendGrid Error:', err.response?.body || err.message);
-    }
-  } else {
-    console.warn('⚠️ SENDGRID_API_KEY not found');
-  }
+      // SMS with Twilio
+      if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+        try {
+          const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-  // SMS with Twilio
-  // SMS with Twilio
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-  try {
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+          await client.messages.create({
+            body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: formattedContact
+          });
+          console.log('✅ Twilio SMS sent successfully to:', formattedContact);
+        } catch (err) {
+          console.error('❌ Twilio SMS Error:', err.message);
+        }
+      } else {
+        console.warn('⚠️ Twilio credentials missing');
+      }
 
-    // Safeguard: Ensure number has + prefix, default to +91 if missing
-    let phoneTo = contact.trim();
-    if (!phoneTo.startsWith('+')) {
-      phoneTo = `+91${phoneTo.replace(/\D/g, '')}`;
-    }
-
-    await client.messages.create({
-      body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phoneTo
-    });
-    console.log('✅ Twilio SMS sent successfully to:', phoneTo);
-  } catch (err) {
-    console.error('❌ Twilio SMS Error:', err.message);
-  }
-}
-
-  console.log(`✅ Background notifications finished for ${referenceId}`);
-})();
+      console.log(`✅ Background notifications finished for ${referenceId}`);
+    })();
 
   } catch (err) {
     console.error('❌ Registration Endpoint Error:', err);

@@ -89,38 +89,23 @@ function RegistrationForm() {
             </div>
 
             {/* Contact Number with +91 Badge */}
-            <div className="form-group full-width">
-              <label className="field-label">Contact Number</label>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span 
-                  style={{
-                    padding: '12px 14px',
-                    background: 'rgba(19, 163, 138, 0.15)',
-                    border: '1px solid #13a38a',
-                    borderRight: 'none',
-                    borderRadius: '8px 0 0 8px',
-                    color: '#3bf3a6',
-                    fontWeight: 'bold',
-                    fontSize: '15px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  🇮🇳 +91
-                </span>
-                <input
-                  type="tel"
-                  className="field"
-                  style={{
-                    borderRadius: '0 8px 8px 0',
-                    flex: 1
-                  }}
-                  placeholder="873603XXXX"
-                  value={formData.rawContact}
-                  onChange={handlePhoneChange}
-                  required
-                />
-              </div>
-            </div>  
+            {/* Contact Number with +91 Badge */}
+<div className="form-group full-width">
+  <label className="field-label">Contact Number</label>
+  <div className="phone-group-container">
+    <span className="phone-prefix-badge">
+      🇮🇳 +91
+    </span>
+    <input
+      type="tel"
+      className="field phone-field-input"
+      placeholder="873603XXXX"
+      value={formData.rawContact}
+      onChange={handlePhoneChange}
+      required
+    />
+  </div>
+</div>
 
             {/* Email */}
             <div className="form-group full-width">

@@ -724,3 +724,40 @@ p.lede, p.racing-sub {
 .step-node.active .step-label {
   color: var(--teal-deep);
 }
+/* ==========================================================================
+   PHONE INPUT GROUP ALIGNMENT & STYLING
+   ========================================================================== */
+
+.phone-group-container {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.phone-prefix-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+  color: var(--teal-deep);
+  font-family: var(--font-racing);
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.field.phone-field-input {
+  border-radius: 0 12px 12px 0 !important;
+  flex: 1;
+}
+
+/* Match container highlight when phone input is focused */
+.phone-group-container:focus-within .phone-prefix-badge {
+  background: #ffffff;
+  border-color: var(--teal-deep);
+}
