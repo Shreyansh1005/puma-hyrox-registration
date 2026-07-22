@@ -475,6 +475,10 @@ p.lede, p.racing-sub {
 }
 
 /* Summary Rows for Review Page */
+/* ==========================================================================
+   SUMMARY ROWS FOR REVIEW PAGE (MOBILE & DESKTOP OPTIMIZED)
+   ========================================================================== */
+
 .summary-list {
   border-top: 1.5px solid var(--line);
   border-bottom: 1.5px solid var(--line);
@@ -484,25 +488,50 @@ p.lede, p.racing-sub {
 .summary-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start; /* Keeps label aligned to top if value wraps */
+  gap: 12px;               /* Ensures mandatory spacing between label and value */
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
 }
 
-.summary-row:last-child { border-bottom: none; }
+.summary-row:last-child {
+  border-bottom: none;
+}
 
 .summary-label {
   font-family: var(--font-racing);
   font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
+  flex-shrink: 0;          /* Prevents label from shrinking/squishing */
+  min-width: 80px;         /* Standardized width for clean alignment */
+  padding-top: 2px;
 }
 
 .summary-value {
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--teal-deep);
-  word-break: break-all;     /* Added here for safety */
-  overflow-wrap: anywhere;
+  text-align: right;
+  flex: 1;                 /* Allows value to take remaining width */
+  overflow-wrap: anywhere; /* Allows long email strings to wrap smoothly */
+  word-break: break-word;
+}
+
+/* Responsive adjustment for extra small screens */
+@media (max-width: 480px) {
+  .summary-row {
+    flex-direction: column; /* Stack label & value vertically on narrow screens */
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 0;
+  }
+
+  .summary-value {
+    text-align: left;
+    width: 100%;
+    font-size: 0.92rem;    /* Slightly tighter font for mobile alignment */
+  }
 }
 
 /* Pass / Success Styles */
@@ -760,4 +789,97 @@ p.lede, p.racing-sub {
 .phone-group-container:focus-within .phone-prefix-badge {
   background: #ffffff;
   border-color: var(--teal-deep);
+}
+/* ==========================================================================
+   MOBILE-OPTIMIZED SLOT & TAB LAYOUT (FIX FOR 360px SCREEN CUTOFFS)
+   ========================================================================== */
+
+/* 1. Date Grid: Force 3 dates in a single clean row */
+.chip-grid.center-grid {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap; /* Prevents 26 JUL from dropping to line 2 */
+}
+
+.chip-grid.center-grid .chip {
+  flex: 1;
+  text-align: center;
+  padding: 10px 4px !important;
+  font-size: 0.85rem !important;
+}
+
+/* 2. Slot Tabs: Fix Evening text cut-off on small screens */
+.slot-tabs {
+  display: flex;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 99px;
+  padding: 3px;
+  gap: 2px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 4px; /* Reduced horizontal padding */
+  border-radius: 99px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-racing);
+  font-size: 0.75rem; /* Slightly tighter font for 360px phones */
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.tab-btn.active {
+  background: var(--surface);
+  color: var(--teal-deep);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 3. Compact Slots & Card Spacing: Fits entirely on phone screen without cutoff */
+.compact-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 180px; /* Controlled height so button stays visible */
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.slot-chip {
+  width: 100%;
+  font-size: 0.75rem !important;
+  padding: 8px 4px !important;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Reduce mobile glass card vertical padding so the confirm button fits on screen */
+@media (max-width: 480px) {
+  .form-container {
+    padding: 12px 12px 24px;
+  }
+
+  .glass-card {
+    padding: 20px 16px !important;
+  }
+
+  .mt-24 { margin-top: 14px !important; }
+  .mt-32 { margin-top: 18px !important; }
+
+  .station-title {
+    font-size: 1.8rem !important;
+  }
+
+  .lede {
+    font-size: 0.9rem !important;
+    margin-top: 6px !important;
+  }
 }

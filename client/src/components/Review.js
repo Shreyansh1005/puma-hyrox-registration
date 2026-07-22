@@ -65,7 +65,8 @@ function Review() {
 
       console.log('Sending Registration Payload:', payload);
 
-      const res = await axios.post('https://puma-hyrox-backend.onrender.com/api/register', payload);
+      // const res = await axios.post('https://puma-hyrox-backend.onrender.com/api/register', payload);
+      const res = await axios.post('http://localhost:5000/api/register', payload);
 
       // Clear local storage after successful registration
       // localStorage.removeItem('fullRegData');
@@ -90,13 +91,13 @@ function Review() {
           <p className="lede">Check everything before you lock it in.</p>
 
           <div className="summary-list mt-24">
-            {rows.map(([label, value]) => (
-              <div key={label} className="summary-row">
-                <span className="summary-label">{label}</span>
-                <span className="summary-value">{value || '—'}</span>
-              </div>
-            ))}
-          </div>
+  {rows.map(([label, value]) => (
+    <div key={label} className="summary-row">
+      <span className="summary-label">{label}</span>
+      <span className="summary-value">{value || '—'}</span>
+    </div>
+  ))}
+</div>
 
           <div className="center mt-32">
             <button 
