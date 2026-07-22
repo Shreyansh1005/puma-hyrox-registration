@@ -219,26 +219,27 @@ app.post('/api/register', async (req, res) => {
   }
 
   // SMS with Twilio
-  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-    try {
-      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      let formattedContact = contact.trim();
-if (!formattedContact.startsWith('')) {
-  formattedContact = `+91${formattedContact}`; // Replace +91 with your primary country code
-}
+  // SMS with Twilio
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+  try {
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-await client.messages.create({
-  body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
-  from: process.env.TWILIO_PHONE_NUMBER,
-  to: formattedContact
-});
-      console.log('✅ Twilio SMS sent successfully');
-    } catch (err) {
-      console.error('❌ Twilio SMS Error:', err.message);
+    // Safeguard: Ensure number has + prefix, default to +91 if missing
+    let phoneTo = contact.trim();
+    if (!phoneTo.startsWith('+')) {
+      phoneTo = `+91${phoneTo.replace(/\D/g, '')}`;
     }
-  } else {
-    console.warn('⚠️ Twilio credentials missing');
+
+    await client.messages.create({
+      body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phoneTo
+    });
+    console.log('✅ Twilio SMS sent successfully to:', phoneTo);
+  } catch (err) {
+    console.error('❌ Twilio SMS Error:', err.message);
   }
+}
 
   console.log(`✅ Background notifications finished for ${referenceId}`);
 })();

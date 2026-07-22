@@ -5,8 +5,11 @@ import './theme.css';
 
 function RegistrationForm() {
   const navigate = useNavigate();
+
+  // State initialized with rawContact for the input and contact for the formatted payload
   const [formData, setFormData] = useState({
     name: '',
+    rawContact: '',
     contact: '',
     email: '',
     age: '',
@@ -14,6 +17,7 @@ function RegistrationForm() {
     consent: false
   });
 
+  // Standard input handler for text/select/checkbox
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -22,12 +26,31 @@ function RegistrationForm() {
     }));
   };
 
+  // Specialized phone handler: Allows only digits, caps at 10, auto-prefixes +91
+  const handlePhoneChange = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+    const formatted = digitsOnly ? `+91${digitsOnly}` : '';
+
+    setFormData((prev) => ({
+      ...prev,
+      rawContact: digitsOnly,
+      contact: formatted
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.contact) {
+
+    if (!formData.name || !formData.email || !formData.rawContact) {
       alert('Please fill out all required details.');
       return;
     }
+
+    if (formData.rawContact.length !== 10) {
+      alert('Please enter a valid 10-digit contact number.');
+      return;
+    }
+
     if (!formData.consent) {
       alert('Please accept the consent terms.');
       return;
@@ -51,6 +74,7 @@ function RegistrationForm() {
           <h2 className="station-title mt-8">Your Details</h2>
 
           <form className="form-grid mt-24" onSubmit={handleSubmit}>
+            {/* Full Name */}
             <div className="form-group full-width">
               <label className="field-label">Full Name</label>
               <input
@@ -64,19 +88,41 @@ function RegistrationForm() {
               />
             </div>
 
+            {/* Contact Number with +91 Badge */}
             <div className="form-group full-width">
               <label className="field-label">Contact Number</label>
-              <input
-                type="tel"
-                name="contact"
-                className="field"
-                placeholder="10-digit mobile number"
-                value={formData.contact}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span 
+                  style={{
+                    padding: '12px 14px',
+                    background: 'rgba(19, 163, 138, 0.15)',
+                    border: '1px solid #13a38a',
+                    borderRight: 'none',
+                    borderRadius: '8px 0 0 8px',
+                    color: '#3bf3a6',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  🇮🇳 +91
+                </span>
+                <input
+                  type="tel"
+                  className="field"
+                  style={{
+                    borderRadius: '0 8px 8px 0',
+                    flex: 1
+                  }}
+                  placeholder="873603XXXX"
+                  value={formData.rawContact}
+                  onChange={handlePhoneChange}
+                  required
+                />
+              </div>
+            </div>  
 
+            {/* Email */}
             <div className="form-group full-width">
               <label className="field-label">Email</label>
               <input
@@ -90,6 +136,7 @@ function RegistrationForm() {
               />
             </div>
 
+            {/* Age */}
             <div className="form-group half-width">
               <label className="field-label">Age</label>
               <input
@@ -103,6 +150,7 @@ function RegistrationForm() {
               />
             </div>
 
+            {/* Gender */}
             <div className="form-group half-width">
               <label className="field-label">Gender</label>
               <select
@@ -119,6 +167,7 @@ function RegistrationForm() {
               </select>
             </div>
 
+            {/* Consent */}
             <div className="form-group full-width consent-row mt-8">
               <input
                 type="checkbox"
@@ -132,6 +181,7 @@ function RegistrationForm() {
               </label>
             </div>
 
+            {/* Submit Button */}
             <div className="full-width mt-24">
               <button type="submit" className="btn btn-primary btn-block race-btn">
                 NEXT: SELECT SLOT →
