@@ -125,6 +125,22 @@ const Registration = mongoose.model('Registration', registrationSchema);
 app.get('/', (req, res) => {
   res.status(200).send('⚡ PUMA X HYROX API Service is Running.');
 });
+// GET Registration Details by Reference ID
+app.get('/api/registration/:referenceId', async (req, res) => {
+  try {
+    const { referenceId } = req.params;
+    const registration = await Registration.findOne({ referenceId });
+
+    if (!registration) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
+
+    res.status(200).json(registration);
+  } catch (err) {
+    console.error('❌ Error fetching registration:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post('/api/register', async (req, res) => {
   try {

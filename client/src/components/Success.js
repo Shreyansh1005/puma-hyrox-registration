@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import RaceTrack from './RaceTrack';
@@ -10,11 +11,31 @@ function Success() {
   const navigate = useNavigate();
   const passRef = useRef(null);
 
-  // Retrieve stored registration data or fallback defaults
-  const fullData = JSON.parse(localStorage.getItem('fullRegData') || '{}');
-  const referenceId = location.state?.referenceId || fullData.referenceId || 'PUMA-HYROX-849201';
+  // Read referenceId and full registration object passed from Review.jsx navigation
+  const referenceId = location.state?.referenceId || 'PUMA-HYROX-849201';
+  const initialData = location.state?.registrationData || null;
 
-  // Download pass as a clean, centered A4 PDF
+  const [regData, setRegData] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData);
+
+  // Fetch registration directly from MongoDB if data isn't in navigation state
+  useEffect(() => {
+    if (!initialData && referenceId) {
+      axios.get(`https://puma-hyrox-backend.onrender.com/api/registration/${referenceId}`)
+        .then((res) => {
+          setRegData(res.data);
+        })
+        .catch((err) => {
+          console.error('Error fetching registration from MongoDB:', err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [initialData, referenceId]);
+
   const handleDownloadPDF = async () => {
     const element = passRef.current;
     if (!element) return;
@@ -33,10 +54,7 @@ function Success() {
       const imgWidth = pdfWidth - 30;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      const xPos = 15;
-      const yPos = 25;
-
-      pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 15, 25, imgWidth, imgHeight);
       pdf.save(`PUMA_HYROX_PASS_${referenceId}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -88,19 +106,19 @@ function Success() {
               </span>
             </div>
 
-            <div className="pass-body mt-20" style={{ fontSize: '15px', lineHeight: '2' }}>
-              <div><strong style={{ color: '#13a38a' }}>Participant:</strong> {fullData.name || 'Participant'}</div>
-              <div><strong style={{ color: '#13a38a' }}>Date:</strong> {fullData.date || '2026-08-16'}</div>
-              <div><strong style={{ color: '#13a38a' }}>Time Slot:</strong> {fullData.timeSlot || '11:00 AM'}</div>
-              
-              {/* FIX 1: Fixed casing from fullData.Contact to fullData.contact */}
-              <div><strong style={{ color: '#13a38a' }}>Contact:</strong> {fullData.contact || '—'}</div>
-              
-              {/* FIX 2: Added missing Email row with text wrapping */}
-              <div style={{ wordBreak: 'break-all' }}>
-                <strong style={{ color: '#13a38a' }}>Email:</strong> {fullData.email || '—'}
+            {loading ? (
+              <div className="mt-20 center" style={{ color: '#13a38a' }}>Fetching pass data from database…</div>
+            ) : (
+              <div className="pass-body mt-20" style={{ fontSize: '15px', lineHeight: '2' }}>
+                <div><strong style={{ color: '#13a38a' }}>Participant:</strong> {regData?.name || '—'}</div>
+                <div><strong style={{ color: '#13a38a' }}>Date:</strong> {regData?.sessionDetails?.date || regData?.date || '—'}</div>
+                <div><strong style={{ color: '#13a38a' }}>Time Slot:</strong> {regData?.sessionDetails?.timeSlot || regData?.timeSlot || '—'}</div>
+                <div><strong style={{ color: '#13a38a' }}>Contact:</strong> {regData?.contact || '—'}</div>
+                <div style={{ wordBreak: 'break-all' }}>
+                  <strong style={{ color: '#13a38a' }}>Email:</strong> {regData?.email || '—'}
+                </div>
               </div>
-            </div>
+            )}
 
             <div 
               className="pass-footer mt-24" 

@@ -68,7 +68,7 @@ function Review() {
       const res = await axios.post('https://puma-hyrox-backend.onrender.com/api/register', payload);
 
       // Clear local storage after successful registration
-      localStorage.removeItem('fullRegData');
+      // localStorage.removeItem('fullRegData');
 
       navigate('/success', { state: { referenceId: res.data.referenceId } });
     } catch (err) {
