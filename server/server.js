@@ -2,16 +2,17 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // ----------------------------------------------------
-// LOAD ENVIRONMENT VARIABLES
+// LOAD ENVIRONMENT VARIABLES (Local fallback)
 // ----------------------------------------------------
-const envPath = path.join(__dirname, '.env');
-const envResult = dotenv.config({ path: envPath });
-
-console.log(`🔍 Checking .env file at: ${envPath}`);
-if (envResult.error) {
-  console.error("❌ Failed to load .env file:", envResult.error.message);
-} else {
-  console.log("✅ .env file loaded successfully!");
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = path.join(__dirname, '.env');
+  const envResult = dotenv.config({ path: envPath });
+  console.log(`🔍 Checking local .env file at: ${envPath}`);
+  if (envResult.error) {
+    console.warn("⚠️ Local .env file not found or failed to load. Falling back to environment variables.");
+  } else {
+    console.log("✅ .env file loaded successfully!");
+  }
 }
 
 const express = require('express');
@@ -25,13 +26,18 @@ const { getMessaging } = require('firebase-admin/messaging');
 const { ServerApiVersion } = require('mongodb');
 
 // ----------------------------------------------------
-// FIREBASE ADMIN INITIALIZATION (modular API — firebase-admin v14+)
+// FIREBASE ADMIN INITIALIZATION (Modular API)
 // ----------------------------------------------------
 console.log("👉 STARTING FIREBASE SETUP...");
 
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 const FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
-const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+let FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+
+if (FIREBASE_PRIVATE_KEY) {
+  // Ensure escaped newline characters are replaced properly
+  FIREBASE_PRIVATE_KEY = FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+}
 
 console.log("Checking Firebase Env Keys:");
 console.log(" - FIREBASE_PROJECT_ID:", FIREBASE_PROJECT_ID ? "LOADED" : "MISSING");
@@ -40,8 +46,6 @@ console.log(" - FIREBASE_PRIVATE_KEY:", FIREBASE_PRIVATE_KEY ? "LOADED" : "MISSI
 
 let firebaseInitialized = false;
 
-console.log("Firebase apps registered BEFORE init attempt:", getApps().length);
-
 if (getApps().length === 0) {
   if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
     try {
@@ -49,27 +53,26 @@ if (getApps().length === 0) {
         credential: cert({
           projectId: FIREBASE_PROJECT_ID,
           clientEmail: FIREBASE_CLIENT_EMAIL,
-          privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          privateKey: FIREBASE_PRIVATE_KEY,
         }),
       });
       firebaseInitialized = true;
       console.log('⚡ Firebase Admin SDK initialized successfully!');
     } catch (fbErr) {
-      console.error('❌ Firebase Admin SDK initialization error:', fbErr);
+      console.error('❌ Firebase Admin SDK initialization error:', fbErr.message);
     }
   } else {
     console.warn('⚠️ Firebase initialization skipped due to missing keys.');
   }
 } else {
   firebaseInitialized = true;
-  console.warn('⚠️ Firebase Admin already had', getApps().length, 'app(s) registered before init ran.');
+  console.warn('⚠️ Firebase Admin already registered before init ran.');
 }
 
 // ----------------------------------------------------
 // EXPRESS APP SETUP
 // ----------------------------------------------------
 const app = express();
-// To allow all origins (fine for testing/development):
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(bodyParser.json());
 
@@ -77,7 +80,7 @@ app.use(bodyParser.json());
 // MONGOOSE DB CONNECTION
 // ----------------------------------------------------
 if (!process.env.MONGO_URI) {
-  console.error("❌ Error: MONGO_URI is not defined in your .env file.");
+  console.error("❌ Error: MONGO_URI is not defined in your environment variables.");
   process.exit(1);
 }
 
@@ -117,6 +120,12 @@ const Registration = mongoose.model('Registration', registrationSchema);
 // ----------------------------------------------------
 // API ROUTES
 // ----------------------------------------------------
+
+// Health Check Endpoint (For Render Deployment)
+app.get('/', (req, res) => {
+  res.status(200).send('⚡ PUMA X HYROX API Service is Running.');
+});
+
 app.post('/api/register', async (req, res) => {
   try {
     const { name, contact, email, age, gender, date, timeSlot, fcmToken } = req.body;
@@ -199,7 +208,7 @@ app.post('/api/register', async (req, res) => {
         console.error('❌ Failed to send email:', mailErr.message);
       }
     } else {
-      console.warn('⚠️ Email credentials missing in .env file. Email notification skipped.');
+      console.warn('⚠️ Email credentials missing in environment variables. Email notification skipped.');
     }
 
     // ----------------------------------------------------
@@ -216,15 +225,15 @@ app.post('/api/register', async (req, res) => {
       try {
         const message = await client.messages.create({
           body: `Hi ${name}, your PUMA X HYROX registration is confirmed! Ref ID: ${referenceId}, Date: ${date}, Slot: ${timeSlot}.`,
-          from: process.env.TWILIO_PHONE_NUMBER, // MUST be your Twilio trial/purchased number
-          to: formattedContact                  // Recipient mobile number
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: formattedContact
         });
         console.log(`✅ SMS sent successfully to ${formattedContact}! SID: ${message.sid}`);
       } catch (smsErr) {
         console.error('❌ Failed to send SMS via Twilio:', smsErr.message);
       }
     } else {
-      console.warn('⚠️ Twilio credentials missing in .env file. SMS notification skipped.');
+      console.warn('⚠️ Twilio credentials missing in environment variables. SMS notification skipped.');
     }
 
     res.status(201).json({
