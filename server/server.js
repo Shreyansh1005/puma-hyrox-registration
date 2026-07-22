@@ -222,11 +222,16 @@ app.post('/api/register', async (req, res) => {
   if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
     try {
       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      await client.messages.create({
-        body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: contact
-      });
+      let formattedContact = contact.trim();
+if (!formattedContact.startsWith('')) {
+  formattedContact = `+91${formattedContact}`; // Replace +91 with your primary country code
+}
+
+await client.messages.create({
+  body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
+  from: process.env.TWILIO_PHONE_NUMBER,
+  to: formattedContact
+});
       console.log('✅ Twilio SMS sent successfully');
     } catch (err) {
       console.error('❌ Twilio SMS Error:', err.message);
