@@ -188,23 +188,37 @@ app.post('/api/register', async (req, res) => {
       }
 
       // Email
-      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        try {
-          const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-          });
-          await transporter.sendMail({
-            from: `"PUMA X HYROX" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: '⚡ PUMA X HYROX Registration Confirmed',
-            html: `<p>Hi ${name}, your booking Ref: ${referenceId} is confirmed!</p>`
-          });
-          console.log('✅ Email sent in background');
-        } catch (err) {
-          console.error('❌ Email Error:', err.message);
-        }
-      }
+      // Email with SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  try {
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    await sgMail.send({
+      to: email,
+      from: 'dubeyshreyansh2003@gmail.com',   // must be verified in SendGrid
+      subject: '⚡ PUMA X HYROX Registration Confirmed',
+      html: `<p>Hi ${name}, your booking Ref: <strong>${referenceId}</strong> is confirmed!</p>`
+    });
+    console.log('✅ SendGrid Email sent');
+  } catch (err) {
+    console.error('❌ SendGrid Error:', err.response?.body || err.message);
+  }
+}
+// SMS with Twilio
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+  try {
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    await client.messages.create({
+      body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: contact  // assuming contact is in international format e.g. +91...
+    });
+    console.log('✅ Twilio SMS sent in background');
+  } catch (err) {
+    console.error('❌ Twilio SMS Error:', err.message);
+  }
+}
     })();
 
   } catch (err) {
