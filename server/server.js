@@ -169,57 +169,74 @@ app.post('/api/register', async (req, res) => {
     });
 
     // 3. SEND NOTIFICATIONS ASYNCHRONOUSLY IN BACKGROUND
-    (async () => {
-      // FCM Push
-      if (fcmToken && firebaseInitialized) {
-        try {
-          await getMessaging().send({
-            token: fcmToken,
-            notification: {
-              title: '⚡ PUMA X HYROX Registration Confirmed!',
-              body: `Hi ${name}, your spot is locked in! Ref: ${referenceId}`,
-            },
-            data: { referenceId, date, timeSlot }
-          });
-          console.log('✅ FCM Push sent in background');
-        } catch (err) {
-          console.error('❌ FCM Error:', err.message);
-        }
-      }
+    // 3. SEND NOTIFICATIONS ASYNCHRONOUSLY IN BACKGROUND
+(async () => {
+  console.log(`📨 Starting background notifications for ${referenceId}`);
 
-      // Email
-      // Email with SendGrid
-if (process.env.SENDGRID_API_KEY) {
-  try {
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  // FCM Push
+  if (fcmToken && firebaseInitialized) {
+    try {
+      await getMessaging().send({
+        token: fcmToken,
+        notification: {
+          title: '⚡ PUMA X HYROX Registration Confirmed!',
+          body: `Hi ${name}, your spot is locked in! Ref: ${referenceId}`,
+        },
+        data: { referenceId, date, timeSlot }
+      });
+      console.log('✅ FCM Push sent');
+    } catch (err) {
+      console.error('❌ FCM Error:', err.message);
+    }
+  }
 
-    await sgMail.send({
-      to: email,
-      from: 'dubeyshreyansh2003@gmail.com',   // must be verified in SendGrid
-      subject: '⚡ PUMA X HYROX Registration Confirmed',
-      html: `<p>Hi ${name}, your booking Ref: <strong>${referenceId}</strong> is confirmed!</p>`
-    });
-    console.log('✅ SendGrid Email sent');
-  } catch (err) {
-    console.error('❌ SendGrid Error:', err.response?.body || err.message);
+  // Email with SendGrid
+  if (process.env.SENDGRID_API_KEY) {
+    try {
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+      await sgMail.send({
+        to: email,
+        from: {
+          email: 'dubeyshreyansh2003@gmail.com',
+          name: 'PUMA X HYROX'
+        },
+        subject: '⚡ PUMA X HYROX Registration Confirmed',
+        html: `
+          <h2>Registration Confirmed!</h2>
+          <p>Hi ${name},</p>
+          <p>Your booking <strong>Ref: ${referenceId}</strong> is confirmed.</p>
+          <p><strong>Date:</strong> ${date} | <strong>Time:</strong> ${timeSlot}</p>
+        `
+      });
+      console.log('✅ SendGrid Email sent successfully');
+    } catch (err) {
+      console.error('❌ SendGrid Error:', err.response?.body || err.message);
+    }
+  } else {
+    console.warn('⚠️ SENDGRID_API_KEY not found');
   }
-}
-// SMS with Twilio
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-  try {
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    await client.messages.create({
-      body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: contact  // assuming contact is in international format e.g. +91...
-    });
-    console.log('✅ Twilio SMS sent in background');
-  } catch (err) {
-    console.error('❌ Twilio SMS Error:', err.message);
+
+  // SMS with Twilio
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+    try {
+      const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      await client.messages.create({
+        body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: contact
+      });
+      console.log('✅ Twilio SMS sent successfully');
+    } catch (err) {
+      console.error('❌ Twilio SMS Error:', err.message);
+    }
+  } else {
+    console.warn('⚠️ Twilio credentials missing');
   }
-}
-    })();
+
+  console.log(`✅ Background notifications finished for ${referenceId}`);
+})();
 
   } catch (err) {
     console.error('❌ Registration Endpoint Error:', err);
