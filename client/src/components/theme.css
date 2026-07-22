@@ -501,6 +501,8 @@ p.lede, p.racing-sub {
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--teal-deep);
+  word-break: break-all;     /* Added here for safety */
+  overflow-wrap: anywhere;
 }
 
 /* Pass / Success Styles */

@@ -20,24 +20,19 @@ function Success() {
     if (!element) return;
 
     try {
-      // Capture canvas with high DPI scale
       const canvas = await html2canvas(element, {
         scale: 3,
         useCORS: true,
-        backgroundColor: '#0d1d19' // Dark card background for clean capture
+        backgroundColor: '#0d1d19'
       });
 
       const imgData = canvas.toDataURL('image/png');
-
-      // Initialize standard A4 PDF (210mm x 297mm)
       const pdf = new jsPDF('portrait', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pdfWidth = pdf.internal.pageSize.getWidth();
 
-      // Maintain aspect ratio
-      const imgWidth = pdfWidth - 30; // 15mm padding on left & right
+      const imgWidth = pdfWidth - 30;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // Center vertically or position near top with padding
       const xPos = 15;
       const yPos = 25;
 
@@ -97,7 +92,14 @@ function Success() {
               <div><strong style={{ color: '#13a38a' }}>Participant:</strong> {fullData.name || 'Participant'}</div>
               <div><strong style={{ color: '#13a38a' }}>Date:</strong> {fullData.date || '2026-08-16'}</div>
               <div><strong style={{ color: '#13a38a' }}>Time Slot:</strong> {fullData.timeSlot || '11:00 AM'}</div>
+              
+              {/* FIX 1: Fixed casing from fullData.Contact to fullData.contact */}
               <div><strong style={{ color: '#13a38a' }}>Contact:</strong> {fullData.contact || '—'}</div>
+              
+              {/* FIX 2: Added missing Email row with text wrapping */}
+              <div style={{ wordBreak: 'break-all' }}>
+                <strong style={{ color: '#13a38a' }}>Email:</strong> {fullData.email || '—'}
+              </div>
             </div>
 
             <div 
