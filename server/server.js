@@ -69,7 +69,8 @@ if (getApps().length === 0) {
 // EXPRESS APP SETUP
 // ----------------------------------------------------
 const app = express();
-app.use(cors());
+// To allow all origins (fine for testing/development):
+app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(bodyParser.json());
 
 // ----------------------------------------------------
