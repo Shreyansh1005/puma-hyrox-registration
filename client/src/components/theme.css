@@ -1,0 +1,724 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  /* Color Palette */
+  --teal: #65D2CA;
+  --green: #AAC85C;
+  --yellow: #F2CB40;
+
+  --teal-deep: #0f5c53;
+  --green-deep: #2d3b10;
+  
+  --bg: #f2f6f3;
+  --surface: #ffffff;
+  --surface-2: #e8f0eb;
+  --line: #d2ded6;
+  --ink: #08120e;
+  --muted: #495e54;
+
+  /* Typography */
+  --font-impact: 'Bebas Neue', display, sans-serif;
+  --font-racing: 'Chakra Petch', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  /* Gradients */
+  --grad-flow: linear-gradient(135deg, var(--teal) 0%, var(--green) 50%, var(--yellow) 100%);
+  --grad-text: linear-gradient(135deg, var(--teal-deep) 0%, #1a3328 100%);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--bg);
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   HIGH-ENERGY VISIBLE RACING BACKGROUND SYSTEM
+   ========================================================================== */
+/* ==========================================================================
+   RACE TRACK STEPPER / STAGE PROGRESS BAR
+   ========================================================================== */
+
+.stepper-container {
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto 28px;
+  padding: 0 10px;
+}
+
+.stepper-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+/* Background Connecting Race Line */
+.stepper-track-line {
+  position: absolute;
+  top: 18px;
+  left: 30px;
+  right: 30px;
+  height: 4px;
+  background: var(--line);
+  z-index: 0;
+}
+
+.stepper-track-progress {
+  height: 100%;
+  background: var(--grad-flow);
+  transition: width 0.4s ease;
+}
+
+/* Step Nodes */
+.step-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-racing);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.step-node.active .step-circle {
+  border-color: var(--teal-deep);
+  background: var(--grad-flow);
+  color: var(--ink);
+  transform: scale(1.15);
+  box-shadow: 0 0 15px rgba(101, 210, 202, 0.5);
+}
+
+.step-node.completed .step-circle {
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
+  color: #ffffff;
+}
+
+.step-label {
+  font-family: var(--font-racing);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+.step-node.active .step-label {
+  color: var(--teal-deep);
+}
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--ink);
+  background-color: var(--bg);
+  /* Pure CSS Dynamic Background Pattern */
+  background-image: 
+    /* High-energy Speed Stripes */
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 25px,
+      rgba(101, 210, 202, 0.08) 25px,
+      rgba(101, 210, 202, 0.08) 50px
+    ),
+    /* Racing Telemetry Grid Lines */
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Ambient Radial Glows */
+.app-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1000px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(101, 210, 202, 0.25) 0%, rgba(170, 200, 92, 0.15) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-container, .form-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   LANDING PAGE STYLES
+   ========================================================================== */
+
+.landing-container {
+  width: 100%;
+  max-width: 780px;
+  padding: 40px 24px 60px;
+  text-align: center;
+}
+
+.hero-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo { height: 38px; }
+.brand-divider { font-weight: bold; color: var(--muted); }
+
+.eyebrow {
+  font-family: var(--font-racing);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-deep);
+  background: rgba(101, 210, 202, 0.25);
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid rgba(101, 210, 202, 0.5);
+  letter-spacing: 0.08em;
+}
+
+h1.display-impact {
+  font-family: var(--font-impact);
+  font-size: clamp(4rem, 11vw, 7.5rem);
+  line-height: 0.88;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 0;
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-highlight {
+  background: var(--grad-flow);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+p.lede, p.racing-sub {
+  font-family: var(--font-body);
+  color: var(--muted);
+  font-size: 1.1rem;
+  font-weight: 600;
+  max-width: 44ch;
+  margin: 16px auto 0;
+}
+
+/* Graphic Hero Container Card */
+.graphic-hero-card {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.hero-badge-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-racing);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+}
+
+.hero-graphic-center {
+  position: relative;
+  text-align: center;
+}
+
+.huge-watermark {
+  font-family: var(--font-impact);
+  font-size: 8.5rem;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(101, 210, 202, 0.12);
+  pointer-events: none;
+  letter-spacing: 4px;
+}
+
+.station-title {
+  font-family: var(--font-racing);
+  font-size: 2.2rem;
+  margin: 0;
+  font-style: italic;
+  color: var(--teal-deep);
+  font-weight: 700;
+}
+
+.card-footer-strip {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-racing);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Buttons */
+.btn {
+  font-family: var(--font-racing);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 16px 36px;
+  border-radius: 99px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-lg {
+  padding: 18px 48px;
+  font-size: 1.15rem;
+}
+
+.btn-primary {
+  background: var(--grad-flow);
+  color: var(--ink);
+  box-shadow: 0 10px 25px -6px rgba(170, 200, 92, 0.6);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 30px -6px rgba(101, 210, 202, 0.7);
+}
+
+.btn-block { width: 100%; }
+
+/* ==========================================================================
+   FORM PAGES (Registration, Slot Selection, Review, Success)
+   ========================================================================== */
+
+.form-container {
+  width: 100%;
+  max-width: 640px;
+  padding: 30px 20px 60px;
+}
+
+/* High-Contrast Glass Card */
+.glass-card {
+  position: relative;
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 28px;
+  box-shadow: 0 20px 45px -10px rgba(8, 18, 14, 0.08);
+  padding: 36px 28px;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 32px; right: 32px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--grad-flow);
+}
+
+/* Form Controls & Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  text-align: left;
+}
+
+.full-width { grid-column: span 2; }
+.half-width { grid-column: span 1; }
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-label {
+  font-family: var(--font-racing);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.field {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.field:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: var(--teal-deep);
+  box-shadow: 0 0 0 4px rgba(101, 210, 202, 0.25);
+}
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.consent-row input[type="checkbox"] {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--teal-deep);
+}
+
+/* Slots Selection Grid & Chips */
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.chip {
+  font-family: var(--font-racing);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip:hover {
+  border-color: var(--teal-deep);
+  transform: translateY(-2px);
+}
+
+.chip.selected {
+  background: var(--grad-flow);
+  color: var(--ink);
+  border-color: transparent;
+  box-shadow: 0 6px 16px -3px rgba(170, 200, 92, 0.6);
+}
+
+/* Summary Rows for Review Page */
+.summary-list {
+  border-top: 1.5px solid var(--line);
+  border-bottom: 1.5px solid var(--line);
+  margin-top: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.summary-row:last-child { border-bottom: none; }
+
+.summary-label {
+  font-family: var(--font-racing);
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--teal-deep);
+}
+
+/* Pass / Success Styles */
+.race-pass-card {
+  background: var(--surface-2);
+  border: 2px dashed var(--teal-deep);
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+}
+
+.pass-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-racing);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.pass-id {
+  font-family: var(--font-impact);
+  font-size: 2.2rem;
+  letter-spacing: 2px;
+  color: var(--teal-deep);
+}
+
+/* Utilities */
+.center { text-align: center; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .full-width, .half-width { grid-column: span 1; }
+}
+/* ==========================================================================
+   PRELOADER OVERLAY & LOGO RESTRAINTS
+   ========================================================================== */
+
+.preloader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background-color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.preloader-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 320px;
+  width: 90%;
+}
+
+/* FIX: Constrain giant Puma logo image */
+.preloader-logo {
+  width: auto;
+  height: 48px; /* Fixed controlled height */
+  max-width: 160px;
+  object-fit: contain;
+  margin-bottom: 24px;
+}
+
+.countdown-container {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-number {
+  font-family: var(--font-impact);
+  font-size: 6rem;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: 2px;
+}
+
+.racing-gauge-bar {
+  width: 200px;
+  height: 6px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 16px 0 12px;
+}
+
+.gauge-fill {
+  height: 100%;
+  background: var(--grad-flow);
+  transition: width 0.4s ease;
+}
+
+.preloader-status {
+  font-family: var(--font-racing);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+/* Custom Styled Dropdown List */
+.select-field {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%20f5c53' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.select-field option {
+  background-color: #ffffff;
+  color: var(--ink);
+  font-weight: 600;
+  padding: 10px;
+}
+
+/* Stepper Alignment & Connectors */
+.stepper-container {
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto 24px;
+}
+
+.stepper-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.stepper-track-line {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 20px;
+  height: 4px;
+  background: var(--line);
+  z-index: 0;
+}
+
+.stepper-track-progress {
+  height: 100%;
+  background: var(--grad-flow);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.step-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-racing);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: all 0.3s ease;
+}
+
+.step-node.active .step-circle {
+  border-color: var(--teal-deep);
+  background: var(--grad-flow);
+  color: var(--ink);
+  transform: scale(1.15);
+  box-shadow: 0 0 15px rgba(101, 210, 202, 0.5);
+}
+
+.step-node.completed .step-circle {
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
+  color: #ffffff;
+}
+
+.step-label {
+  font-family: var(--font-racing);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.step-node.active .step-label {
+  color: var(--teal-deep);
+}
