@@ -32,13 +32,13 @@ function LandingPage() {
           </div>
 
           <h1 className="display display-impact mt-16 text-bang">
-            WELCOME.<br />
-            TO.<br />
-            <span className="text-highlight">MEOW MART.</span>
+            WELCOME<br />
+            TO<br />
+            <span className="text-highlight">MEOW MART</span>
           </h1>
 
           <p className="lede racing-sub slam-anim-delayed">
-            Book your slot, skip the scramble, and get those carts ready. See you there.
+            BOOK YOUR SLOT, SKIP THE SCRAMBLE, AND GET THOSE CARTS READY. SEE YOU THERE.
           </p>
 <div className="cta-group mt-32 slam-anim-delayed-2">
   <button className="btn btn-primary race-btn" onClick={() => navigate('/register')}>

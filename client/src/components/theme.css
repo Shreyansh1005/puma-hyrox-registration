@@ -32,11 +32,20 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body, #root {
+html {
+  height: 100%;
+  /* iOS Safari (pre-15.4) fallback: 100vh doesn't shrink with the
+     address bar, causing content below the fold to be clipped.
+     -webkit-fill-available solves this on older iOS Safari. */
+  height: -webkit-fill-available;
+}
+
+body, #root {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100vh;              /* fallback for very old browsers */
+  min-height: -webkit-fill-available; /* older iOS Safari fix */
+  min-height: 100dvh;             /* modern iOS Safari + Chrome: true visible viewport */
   background-color: var(--bg);
 }
 
@@ -50,6 +59,11 @@ body {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
   overflow-x: hidden;
+  /* Let the page scroll if content is taller than the visible
+     viewport instead of clipping it — this is the main cause of
+     "cut off" content on iPhone Safari. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ==========================================================================
@@ -58,13 +72,22 @@ body {
 
 .app-shell {
   position: relative;
-  min-height: 100vh; 
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
   min-height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* justify-content: center clips the TOP of content on iOS whenever
+     the content is taller than the currently-visible viewport (e.g.
+     when the address bar is expanded). Centering via auto margins on
+     the child (see .landing-container / .form-container) achieves
+     the same centered look but lets the page scroll instead of
+     clipping, so nothing gets cut off. */
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   color: var(--ink);
   background-color: var(--bg);
   box-sizing: border-box;
@@ -430,6 +453,10 @@ p.lede, p.racing-sub {
   width: 100%;
   max-width: 640px;
   padding: 30px 20px 60px;
+  /* Centers vertically when there's extra space, but — unlike
+     justify-content:center on the parent — never clips the top when
+     content is taller than the viewport. */
+  margin: auto 0;
 }
 
 .glass-card {
@@ -798,9 +825,17 @@ p.lede, p.racing-sub {
   align-items: center;
   justify-content: center;
   width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
+  height: 100vh;              /* fallback */
+  height: -webkit-fill-available; /* older iOS Safari */
+  height: 100dvh;             /* modern iOS Safari + Chrome */
+  /* auto (not hidden): if the preloader content is ever taller than
+     the visible viewport on a short iPhone screen, it scrolls
+     instead of getting clipped at the top/bottom. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  box-sizing: border-box;
   transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 

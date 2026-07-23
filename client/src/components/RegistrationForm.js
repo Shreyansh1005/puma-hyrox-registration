@@ -103,6 +103,7 @@ function RegistrationForm() {
                 onChange={handleChange}
                 required
               >
+                <option value="">Registration Type</option>
                 <option value="participant">🏃 PARTICIPANT</option>
                 <option value="spectator">👀 SPECTATOR</option>
               </select>
