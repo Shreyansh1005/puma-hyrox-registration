@@ -22,10 +22,13 @@ function LandingPage() {
 
       <main className="landing-container">
         <header className="hero-header">
-          <div className="logo-badge-group slam-anim">
-            <img src="/media/PUMA_CAT_LOGO_PNG.png" alt="PUMA" className="brand-logo" />
-            <span className="brand-divider">×</span>
-            <span className="eyebrow racing-font">HYROX SERIES 2026</span>
+          {/* Main Hero Joint Logo */}
+          <div className="main-logo-wrapper slam-anim">
+            <img 
+              src="/media/PumaXHyrox_Logo_PNG_01.png" 
+              alt="PUMA x HYROX" 
+              className="joint-hero-logo" 
+            />
           </div>
 
           <h1 className="display display-impact mt-16 text-bang">
@@ -35,36 +38,14 @@ function LandingPage() {
           </h1>
 
           <p className="lede racing-sub slam-anim-delayed">
-            Lock in your station for the next PUMA X HYROX event. Two minutes to
-            register, one race day to prove it.
+            Lock in your slot for the puma meowmart, get your carts ready
           </p>
-
-          <div className="cta-group mt-32 slam-anim-delayed-2">
-            <button className="btn btn-primary btn-lg race-btn" onClick={() => navigate('/register')}>
-              Begin Registration →
-            </button>
-          </div>
+<div className="cta-group mt-32 slam-anim-delayed-2">
+  <button className="btn btn-primary race-btn" onClick={() => navigate('/register')}>
+    Begin Registration →
+  </button>
+</div>
         </header>
-
-        {/* Dynamic Graphic Hero Container */}
-        <section className="hero-card-container mt-32 slam-anim-delayed-2">
-          <div className="graphic-hero-card">
-            <div className="hero-badge-strip">
-              <span className="racing-font">LIVE TELEMETRY ACTIVE</span>
-              <span className="pulse-dot" />
-            </div>
-
-            <div className="hero-graphic-center">
-              <span className="huge-watermark">PUMA</span>
-              <h2 className="station-title text-bang">HYROX ARENA</h2>
-            </div>
-
-            <div className="card-footer-strip">
-              <span>STATION 01 / READY</span>
-              <span>2026 EDITION</span>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );

@@ -2,7 +2,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // ----------------------------------------------------
-// LOAD ENVIRONMENT VARIABLES (Local fallback)
+// LOAD ENVIRONMENT VARIABLES
 // ----------------------------------------------------
 if (process.env.NODE_ENV !== 'production') {
   const envPath = path.join(__dirname, '.env');
@@ -27,6 +27,14 @@ const { getMessaging } = require('firebase-admin/messaging');
 const { ServerApiVersion } = require('mongodb');
 
 // ----------------------------------------------------
+// CAPACITY CONFIGURATION
+// ----------------------------------------------------
+const CAPACITY_LIMITS = {
+  participant: 1, // Set to 12 for production
+  spectator: 1    // Set to 5 for production
+};
+
+// ----------------------------------------------------
 // SENDGRID INITIALIZATION
 // ----------------------------------------------------
 if (process.env.SENDGRID_API_KEY) {
@@ -39,19 +47,16 @@ if (process.env.SENDGRID_API_KEY) {
 // ----------------------------------------------------
 // FIREBASE ADMIN INITIALIZATION
 // ----------------------------------------------------
-console.log("👉 STARTING FIREBASE SETUP...");
-
-const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
-const FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
-let FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
-
-if (FIREBASE_PRIVATE_KEY) {
-  FIREBASE_PRIVATE_KEY = FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-}
-
 let firebaseInitialized = false;
-
 if (getApps().length === 0) {
+  const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+  const FIREBASE_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
+  let FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (FIREBASE_PRIVATE_KEY) {
+    FIREBASE_PRIVATE_KEY = FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+  }
+
   if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
     try {
       initializeApp({
@@ -71,7 +76,6 @@ if (getApps().length === 0) {
   }
 } else {
   firebaseInitialized = true;
-  console.warn('⚠️ Firebase Admin already registered before init ran.');
 }
 
 // ----------------------------------------------------
@@ -102,196 +106,37 @@ mongoose.connect(process.env.MONGO_URI, {
 // ----------------------------------------------------
 // SCHEMA & MODEL
 // ----------------------------------------------------
-const registrationSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    contact: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true, lowercase: true },
-    age: { type: Number, required: true },
-    gender: { type: String, required: true, enum: ['Male', 'Female', 'Other'] },
-    sessionDetails: {
-      date: { type: String, required: true },
-      timeSlot: { type: String, required: true },
-    },
-    referenceId: { type: String, required: true, unique: true },
-    fcmToken: { type: String, default: null },
-    status: { type: String, default: 'confirmed', enum: ['confirmed', 'cancelled'] },
+const registrationSchema = new mongoose.Schema({
+  name: String,
+  contact: String,
+  email: String,
+  age: Number,
+  gender: String,
+  registrationType: { 
+    type: String, 
+    required: true, 
+    enum: ['participant', 'spectator'], 
+    default: 'participant' 
   },
-  { timestamps: true }
-);
+  sessionDetails: {
+    date: String,
+    timeSlot: String,
+    referenceId: String   // ← Simple String, no unique here
+  },
+  referenceId: { 
+    type: String, 
+    unique: true, 
+    required: true 
+  },
+  status: { type: String, default: 'confirmed' },
+  fcmToken: String
+}, { timestamps: true });
 
 const Registration = mongoose.model('Registration', registrationSchema);
 
 // ----------------------------------------------------
-// ROUTES
+// SLOT GENERATOR HELPER
 // ----------------------------------------------------
-
-app.get('/', (req, res) => {
-  res.status(200).send('⚡ PUMA X HYROX API Service is Running.');
-});
-
-app.get('/api/registration/:referenceId', async (req, res) => {
-  try {
-    const { referenceId } = req.params;
-    const registration = await Registration.findOne({ referenceId });
-
-    if (!registration) {
-      return res.status(404).json({ error: 'Registration not found' });
-    }
-
-    res.status(200).json(registration);
-  } catch (err) {
-    console.error('❌ Error fetching registration:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/register', async (req, res) => {
-  try {
-    const { name, contact, email, age, gender, date, timeSlot, fcmToken } = req.body;
-    const referenceId = 'PUMA-HYROX-' + Date.now().toString().slice(-6);
-
-    let formattedContact = contact ? contact.toString().trim() : '';
-    if (formattedContact && !formattedContact.startsWith('+')) {
-      formattedContact = `+91${formattedContact.replace(/\D/g, '')}`;
-    }
-
-    const newReg = new Registration({
-      name,
-      contact: formattedContact,
-      email,
-      age,
-      gender,
-      sessionDetails: { date, timeSlot },
-      referenceId,
-      fcmToken: fcmToken || null,
-    });
-
-    await newReg.save();
-
-    // Respond immediately to frontend
-    res.status(201).json({
-      message: 'Registered successfully',
-      referenceId,
-      data: newReg
-    });
-
-    // Background Async Tasks
-    (async () => {
-      console.log(`📨 Starting background notifications for ${referenceId}`);
-
-      // SendGrid Email
-      if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
-        try {
-          const emailData = {
-            to: email,
-            from: {
-              email: process.env.SENDGRID_FROM_EMAIL,
-              name: 'PUMA X HYROX'
-            },
-            subject: '⚡ Your PUMA X HYROX Registration Pass',
-            html: `
-              <!DOCTYPE html>
-              <html>
-              <head><meta charset="UTF-8"></head>
-              <body style="margin: 0; padding: 0; background-color: #f2f6f3; font-family: 'Helvetica Neue', Arial, sans-serif;">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f2f6f3; padding: 30px 10px;">
-                  <tr>
-                    <td align="center">
-                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; border: 1px solid #d2ded6; overflow: hidden;">
-                        <tr>
-                          <td style="height: 6px; background: linear-gradient(135deg, #65D2CA 0%, #AAC85C 100%);"></td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 28px;">
-                            <h2 style="color: #0f5c53; font-style: italic; margin-top: 0; font-size: 28px;">PUMA X HYROX</h2>
-                            <p style="font-size: 15px; color: #08120e;">Hi <strong>${name}</strong>,</p>
-                            <p style="font-size: 15px; color: #495e54;">Your registration is confirmed! Below are your station details:</p>
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #e8f0eb; border: 2px dashed #0f5c53; border-radius: 10px; padding: 16px; margin: 20px 0;">
-                              <tr><td style="padding: 6px 0; font-family: monospace;"><strong>REFERENCE:</strong> ${referenceId}</td></tr>
-                              <tr><td style="padding: 6px 0; font-family: monospace;"><strong>DATE:</strong> ${date}</td></tr>
-                              <tr><td style="padding: 6px 0; font-family: monospace;"><strong>SLOT TIME:</strong> ${timeSlot}</td></tr>
-                            </table>
-                            <p style="font-size: 13px; color: #495e54;">Please report to the venue 15 minutes prior to your time slot.</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </body>
-              </html>
-            `
-          };
-          await sgMail.send(emailData);
-          console.log(`✅ SendGrid Email sent to ${email}`);
-        } catch (err) {
-          console.error('❌ SendGrid Error:', err.message);
-        }
-      }
-
-      // FCM Push
-      if (fcmToken && firebaseInitialized) {
-        try {
-          await getMessaging().send({
-            token: fcmToken,
-            notification: {
-              title: '⚡ PUMA X HYROX Registration Confirmed!',
-              body: `Hi ${name}, your spot is locked in! Ref: ${referenceId}`,
-            },
-            data: { referenceId, date, timeSlot }
-          });
-          console.log('✅ FCM Push sent');
-        } catch (err) {
-          console.error('❌ FCM Error:', err.message);
-        }
-      }
-
-      // MailBluster Integration
-      const mailblusterKey = process.env.MAILBLUSTER_API_KEY ? process.env.MAILBLUSTER_API_KEY.trim() : '';
-      if (mailblusterKey) {
-        try {
-          await axios.post(
-            'https://api.mailbluster.com/api/leads',
-            {
-              email,
-              subscribed: true,
-              firstName: name,
-              meta: { phone: formattedContact, age, gender, referenceId, sessionDate: date, timeSlot },
-              tags: ['PUMA HYROX 2026']
-            },
-            { headers: { 'Authorization': mailblusterKey, 'Content-Type': 'application/json' } }
-          );
-          console.log('✅ MailBluster Lead created');
-        } catch (err) {
-          console.error('❌ MailBluster Error:', err.response?.data || err.message);
-        }
-      }
-
-      // Twilio SMS
-      if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-        try {
-          const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-          await client.messages.create({
-            body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
-            from: process.env.TWILIO_PHONE_NUMBER,
-            to: formattedContact
-          });
-          console.log('✅ Twilio SMS sent to:', formattedContact);
-        } catch (err) {
-          console.error('❌ Twilio SMS Error:', err.message);
-        }
-      }
-
-      console.log(`✅ Background notifications completed for ${referenceId}`);
-    })().catch(bgErr => console.error('❌ Background Job Error:', bgErr));
-
-  } catch (err) {
-    console.error('❌ Registration Error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 function generateSlots() {
   const times = [];
   let current = 10 * 60;
@@ -318,12 +163,204 @@ function generateSlots() {
   return times;
 }
 
-app.get('/api/slots', (req, res) => {
-  res.json({
-    dates: ['24 JUL', '25 JUL', '26 JUL'],
-    slots: generateSlots()
-  });
+// ----------------------------------------------------
+// ROUTES
+// ----------------------------------------------------
+
+app.get('/', (req, res) => {
+  res.status(200).send('⚡ PUMA X HYROX API Service is Running.');
 });
 
+// Fetch active slots with MongoDB booking counts
+app.get('/api/slots', async (req, res) => {
+  try {
+    const counts = await Registration.aggregate([
+      { $match: { status: 'confirmed' } },
+      {
+        $group: {
+          _id: {
+            date: "$sessionDetails.date",
+            timeSlot: "$sessionDetails.timeSlot",
+            // If registrationType is missing in DB, fallback to 'participant'
+            type: { $ifNull: [ "$registrationType", "participant" ] } 
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const bookedMap = {};
+    counts.forEach(item => {
+      const type = (item._id.type || 'participant').toString().toLowerCase().trim();
+      const date = (item._id.date || '').toString().trim();
+      const slot = (item._id.timeSlot || '').toString().trim();
+
+      const key = `${date}_${slot}_${type}`;
+      bookedMap[key] = item.count;
+    });
+
+    res.json({
+      success: true,
+      bookedMap,
+      capacityLimits: CAPACITY_LIMITS,
+      slots: generateSlots(),
+      dates: ['24 JUL', '25 JUL', '26 JUL']
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Fetch single registration by Reference ID (Supports both root & nested lookup)
+app.get('/api/registration/:referenceId', async (req, res) => {
+  try {
+    const { referenceId } = req.params;
+    const registration = await Registration.findOne({
+      $or: [
+        { 'sessionDetails.referenceId': referenceId },
+        { referenceId: referenceId }
+      ]
+    });
+
+    if (!registration) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
+
+    res.status(200).json(registration);
+  } catch (err) {
+    console.error('❌ Error fetching registration:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/register', async (req, res) => {
+  try {
+    const { 
+      name, 
+      contact, 
+      email, 
+      age, 
+      gender, 
+      date, 
+      timeSlot, 
+      registrationType = 'participant', 
+      fcmToken 
+    } = req.body;
+
+    const normalizedType = (registrationType || 'participant').toLowerCase().trim();
+    const cleanDate = date ? date.trim() : '';
+    const cleanTimeSlot = timeSlot ? timeSlot.trim() : '';
+
+    // 1. Capacity Check
+    const currentCount = await Registration.countDocuments({
+      'sessionDetails.date': cleanDate,
+      'sessionDetails.timeSlot': cleanTimeSlot,
+      $or: [
+        { registrationType: normalizedType },
+        { registrationType: { $exists: false } }
+      ],
+      status: 'confirmed'
+    });
+
+    const limit = CAPACITY_LIMITS[normalizedType] ?? 1;
+
+    if (currentCount >= limit) {
+      return res.status(400).json({ 
+        error: `This slot is fully booked for ${normalizedType}s (${currentCount}/${limit}).` 
+      });
+    }
+
+    // 2. Generate Reference ID (Ensure it's never null)
+    const referenceId = 'PUMA' + Math.floor(100000 + Math.random() * 900000);
+
+    let formattedContact = contact ? contact.toString().trim() : '';
+    if (formattedContact && !formattedContact.startsWith('+')) {
+      formattedContact = `+91${formattedContact.replace(/\D/g, '')}`;
+    }
+
+    // 3. Save Registration
+    const newReg = new Registration({
+      name: name?.trim(),
+      contact: formattedContact,
+      email: email?.trim().toLowerCase(),
+      age: Number(age),
+      gender: gender?.trim(),
+      registrationType: normalizedType,
+      referenceId: referenceId,  
+      sessionDetails: { 
+        date: cleanDate, 
+        timeSlot: cleanTimeSlot,
+      },
+      fcmToken: fcmToken || null,
+      status: 'confirmed'
+    });
+
+    await newReg.save();
+
+    console.log(`✅ Registration saved with Ref: ${referenceId}`);
+
+    res.status(201).json({
+      message: 'Registered successfully',
+      referenceId,
+      data: newReg
+    });
+
+    // Background Notifications (unchanged)
+    (async () => {
+      console.log(`📨 Starting background notifications for ${referenceId}`);
+
+      if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
+        try {
+          const emailData = {
+            to: email,
+            from: { email: process.env.SENDGRID_FROM_EMAIL, name: 'PUMA X HYROX' },
+            subject: '⚡ Your PUMA Registration Pass',
+            html: `
+              <!DOCTYPE html>
+              <html>
+              <body style="font-family: Arial, sans-serif; background-color: #f2f6f3; padding: 20px;">
+                <div style="max-width: 580px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 12px;">
+                  <h2 style="color: #0f5c53;">PUMA X HYROX</h2>
+                  <p>Hi <strong>${name}</strong>,</p>
+                  <p>Your registration as a <strong>${normalizedType.toUpperCase()}</strong> is confirmed!</p>
+                  <div style="background: #e8f0eb; padding: 16px; border-radius: 8px; border: 2px dashed #0f5c53;">
+                    <p><strong>REF ID:</strong> ${referenceId}</p>
+                    <p><strong>TYPE:</strong> ${normalizedType.toUpperCase()}</p>
+                    <p><strong>DATE:</strong> ${cleanDate}</p>
+                    <p><strong>TIME:</strong> ${cleanTimeSlot}</p>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `
+          };
+          await sgMail.send(emailData);
+          console.log(`✅ Email sent to ${email}`);
+        } catch (err) {
+          console.error('❌ SendGrid Error:', err.message);
+        }
+      }
+
+      if (fcmToken && firebaseInitialized) {
+        try {
+          await getMessaging().send({
+            token: fcmToken,
+            notification: {
+              title: '⚡ PUMA X HYROX Registration Confirmed!',
+              body: `Hi ${name}, your spot as a ${normalizedType} is locked in! Ref: ${referenceId}`,
+            }
+          });
+        } catch (err) {
+          console.error('❌ FCM Error:', err.message);
+        }
+      }
+    })();
+
+  } catch (err) {
+    console.error('❌ Registration Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+            

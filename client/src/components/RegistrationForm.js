@@ -13,6 +13,7 @@ function RegistrationForm() {
     email: '',
     age: '',
     gender: '',
+    registrationType: 'participant', // Default to participant
     consent: false
   });
 
@@ -25,6 +26,7 @@ function RegistrationForm() {
   };
 
   const handlePhoneChange = (e) => {
+    // Restrict input strictly to digits and enforce exactly 10 digits maximum
     const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
     const formatted = digitsOnly ? `+91${digitsOnly}` : '';
 
@@ -35,26 +37,48 @@ function RegistrationForm() {
     }));
   };
 
+  const validateEmail = (email) => {
+    // Standard robust email validation regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.rawContact) {
-      alert('Please fill out all required details.');
+    // 1. Mandatory Fields Check
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.rawContact.trim() ||
+      !formData.age ||
+      !formData.gender
+    ) {
+      alert('Please fill out all mandatory details marked with (*).');
       return;
     }
 
+    // 2. Strict 10-Digit Mobile Number Validation
     if (formData.rawContact.length !== 10) {
-      alert('Please enter a valid 10-digit contact number.');
+      alert('Please enter a valid, complete 10-digit contact number.');
       return;
     }
 
+    // 3. Strict Email Validation
+    if (!validateEmail(formData.email.trim())) {
+      alert('Please enter a valid email address (e.g., name@example.com).');
+      return;
+    }
+
+    // 4. Terms Consent Check
     if (!formData.consent) {
-      alert('Please accept the consent terms.');
+      alert('Please accept the consent terms to proceed.');
       return;
     }
 
+    // Save to local storage for downstream screens
     localStorage.setItem('regData', JSON.stringify(formData));
-    navigate('/slots');
+    navigate('/slots', { state: { formData } });
   };
 
   return (
@@ -66,10 +90,29 @@ function RegistrationForm() {
           <span className="eyebrow">STATION 01</span>
           <h2 className="station-title mt-8">Your Details</h2>
 
-          <form className="form-grid mt-24" onSubmit={handleSubmit}>
-            {/* Full Name */}
+          <form className="form-grid mt-24" onSubmit={handleSubmit} noValidate>
+            {/* 1. Registration Type Dropdown */}
             <div className="form-group full-width">
-              <label className="field-label">Full Name</label>
+              <label className="field-label">
+                I am joining as <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <select
+                name="registrationType"
+                className="field select-field"
+                value={formData.registrationType}
+                onChange={handleChange}
+                required
+              >
+                <option value="participant">🏃 PARTICIPANT</option>
+                <option value="spectator">👀 SPECTATOR</option>
+              </select>
+            </div>
+
+            {/* 2. Full Name */}
+            <div className="form-group full-width">
+              <label className="field-label">
+                Full Name <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
               <input
                 type="text"
                 name="name"
@@ -81,15 +124,20 @@ function RegistrationForm() {
               />
             </div>
 
-            {/* Contact Number with +91 Badge */}
+            {/* 3. Contact Number (Strict 10 Digits) */}
             <div className="form-group full-width">
-              <label className="field-label">Contact Number</label>
+              <label className="field-label">
+                Contact Number (10 Digits) <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
               <div className="phone-group-container">
                 <span className="phone-prefix-badge">🇮🇳 +91</span>
                 <input
                   type="tel"
                   className="field phone-field-input"
-                  placeholder="873603XXXX"
+                  placeholder="9876543210"
+                  maxLength={10}
+                  minLength={10}
+                  pattern="[0-9]{10}"
                   value={formData.rawContact}
                   onChange={handlePhoneChange}
                   required
@@ -97,9 +145,11 @@ function RegistrationForm() {
               </div>
             </div>
 
-            {/* Email */}
+            {/* 4. Email Address */}
             <div className="form-group full-width">
-              <label className="field-label">Email</label>
+              <label className="field-label">
+                Email Address <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
               <input
                 type="email"
                 name="email"
@@ -111,23 +161,29 @@ function RegistrationForm() {
               />
             </div>
 
-            {/* Age */}
+            {/* 5. Age */}
             <div className="form-group half-width">
-              <label className="field-label">Age</label>
+              <label className="field-label">
+                Age <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
               <input
                 type="number"
                 name="age"
                 className="field"
                 placeholder="Age"
+                min={10}
+                max={99}
                 value={formData.age}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            {/* Gender */}
+            {/* 6. Gender */}
             <div className="form-group half-width">
-              <label className="field-label">Gender</label>
+              <label className="field-label">
+                Gender <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
               <select
                 name="gender"
                 className="field select-field"
@@ -142,19 +198,21 @@ function RegistrationForm() {
               </select>
             </div>
 
-            {/* Consent */}
-            <div className="form-group full-width consent-row mt-8">
-              <input
-                type="checkbox"
-                id="consent"
-                name="consent"
-                checked={formData.consent}
-                onChange={handleChange}
-              />
-              <label htmlFor="consent">
-                I agree that PUMA India may collect and use this information to process my HYROX registration.
-              </label>
-            </div>
+            {/* Consent Checkbox */}
+            {/* Consent Checkbox */}
+<div className="form-group full-width consent-row mt-8">
+  <input
+    type="checkbox"
+    id="consent"
+    name="consent"
+    checked={formData.consent}
+    onChange={handleChange}
+    required
+  />
+  <label htmlFor="consent">
+    I agree to the storage and processing of my personal data by PUMA India and HYROX in accordance with the Privacy Policy and Terms & Conditions. <span style={{ color: '#e53e3e' }}>*</span>
+  </label>
+</div>
 
             {/* Submit Button */}
             <div className="full-width mt-24">

@@ -11,26 +11,18 @@ function Success() {
   const navigate = useNavigate();
   const passRef = useRef(null);
 
-  // Read referenceId and full registration object passed from Review.jsx navigation
-  const referenceId = location.state?.referenceId || 'PUMA-HYROX-849201';
+  const referenceId = location.state?.referenceId;
   const initialData = location.state?.registrationData || null;
 
   const [regData, setRegData] = useState(initialData);
   const [loading, setLoading] = useState(!initialData);
 
-  // Fetch registration directly from MongoDB if data isn't in navigation state
   useEffect(() => {
     if (!initialData && referenceId) {
       axios.get(`https://puma-hyrox-backend.onrender.com/api/registration/${referenceId}`)
-        .then((res) => {
-          setRegData(res.data);
-        })
-        .catch((err) => {
-          console.error('Error fetching registration from MongoDB:', err);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+        .then((res) => setRegData(res.data))
+        .catch((err) => console.error('Error fetching registration:', err))
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
@@ -50,12 +42,11 @@ function Success() {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('portrait', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-
       const imgWidth = pdfWidth - 30;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 15, 25, imgWidth, imgHeight);
-      pdf.save(`PUMA_HYROX_PASS_${referenceId}.pdf`);
+      pdf.save(`PUMA_HYROX_PASS_${referenceId || 'CONFIRMED'}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Could not download pass. Please try again.');
@@ -71,10 +62,9 @@ function Success() {
           <span className="eyebrow">FINISH LINE CROSSED</span>
           <h2 className="station-title mt-8">Booking Confirmed!</h2>
           <p className="lede">
-            You're locked in for PUMA X HYROX. Confirmation has been sent to your email & SMS.
+           Your slot for meowmart has been confirmed and sent to your email and sms. PLEASE ENSURE TO COME 10 MINS PRIOR TO SLOT
           </p>
 
-          {/* Styled Printable Pass Card */}
           <div 
             ref={passRef} 
             className="race-pass-card mt-24" 
@@ -92,17 +82,17 @@ function Success() {
               className="pass-header" 
               style={{ 
                 display: 'flex', 
-                justify: 'space-between', 
+                justifyContent: 'space-between', 
                 alignItems: 'center',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.15)', 
                 paddingBottom: '14px' 
               }}
             >
               <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '1px', color: '#13a38a' }}>
-                PUMA X HYROX 2026
+                MEOWART-DELHI
               </span>
-              <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8, letterSpacing: '1px' }}>
-                ENTRY PASS
+              <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8, letterSpacing: '1px', textTransform: 'uppercase' }}>
+                {(regData?.registrationType || 'PARTICIPANT')} PASS
               </span>
             </div>
 
@@ -110,7 +100,13 @@ function Success() {
               <div className="mt-20 center" style={{ color: '#13a38a' }}>Fetching pass data from database…</div>
             ) : (
               <div className="pass-body mt-20" style={{ fontSize: '15px', lineHeight: '2' }}>
-                <div><strong style={{ color: '#13a38a' }}>Participant:</strong> {regData?.name || '—'}</div>
+                <div>
+                  <strong style={{ color: '#13a38a' }}>Type:</strong>{' '}
+                  <span style={{ textTransform: 'uppercase', fontWeight: 'bold', color: '#3bf3a6' }}>
+                    {regData?.registrationType || 'participant'}
+                  </span>
+                </div>
+                <div><strong style={{ color: '#13a38a' }}>Name:</strong> {regData?.name || '—'}</div>
                 <div><strong style={{ color: '#13a38a' }}>Date:</strong> {regData?.sessionDetails?.date || regData?.date || '—'}</div>
                 <div><strong style={{ color: '#13a38a' }}>Time Slot:</strong> {regData?.sessionDetails?.timeSlot || regData?.timeSlot || '—'}</div>
                 <div><strong style={{ color: '#13a38a' }}>Contact:</strong> {regData?.contact || '—'}</div>
@@ -132,17 +128,13 @@ function Success() {
                 Reference ID
               </div>
               <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#3bf3a6', letterSpacing: '2px', marginTop: '4px' }}>
-                {referenceId}
+                {referenceId || regData?.referenceId || 'N/A'}
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-32" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button 
-              className="btn btn-primary race-btn btn-block" 
-              onClick={handleDownloadPDF}
-            >
+            <button className="btn btn-primary race-btn btn-block" onClick={handleDownloadPDF}>
               📥 DOWNLOAD PASS (PDF)
             </button>
 
