@@ -200,7 +200,7 @@ app.post('/api/register', async (req, res) => {
           const emailData = {
             to: email,
             from: {
-              email: process.env.SENDGRID_FROM_EMAIL,
+              email:'pumaXhyrox@catalystinfomedia.com',
               name: 'PUMA X HYROX'
             },
             subject: '⚡ Your PUMA X HYROX Registration Pass',
