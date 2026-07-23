@@ -19,8 +19,8 @@
   /* Typography */
   --font-impact: 'FF DIN Condensed', 'DIN Condensed', 'Bebas Neue', sans-serif;
   --font-racing: 'FF DIN Condensed', 'DIN Condensed', 'Chakra Petch', sans-serif;
-  --font-body: 'Space Grotesk', sans-serif;
-  --font-mono: 'Space Mono', monospace;
+  --font-body: 'FF DIN Condensed', 'DIN Condensed', 'Chakra Petch', sans-serif;
+  --font-mono: 'FF DIN Condensed', 'DIN Condensed', 'Bebas Neue', sans-serif;
 
   /* Gradients */
   --grad-flow: linear-gradient(135deg, var(--teal) 0%, var(--green) 50%, var(--yellow) 100%);
