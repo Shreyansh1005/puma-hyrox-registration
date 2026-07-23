@@ -8,6 +8,24 @@ const DEFAULT_DATES = ['24 JUL', '25 JUL', '26 JUL'];
 
 const MONTH_MAP = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
 
+// Time-of-day boundaries in minutes-since-midnight used to bucket slots
+// into the Morning / Afternoon / Evening tabs.
+// Morning:   00:00 – 11:59
+// Afternoon: 12:00 – 16:59
+// Evening:   17:00 – 23:59
+// Adjust these if your event's actual period boundaries differ.
+const PERIOD_RANGES = {
+  morning:   { start: 0,   end: 12 * 60 },
+  afternoon: { start: 12 * 60, end: 17 * 60 },
+  evening:   { start: 17 * 60, end: 24 * 60 },
+};
+
+const getSlotPeriod = (startMin) => {
+  if (startMin < PERIOD_RANGES.afternoon.start) return 'morning';
+  if (startMin < PERIOD_RANGES.evening.start) return 'afternoon';
+  return 'evening';
+};
+
 const parseSlotDate = (dateStr) => {
   const now = new Date();
   const [day, monthStr] = dateStr.trim().split(' ');
@@ -126,7 +144,15 @@ function SlotSelection() {
     return count < limit;
   };
 
-  const filteredSlots = useMemo(() => allSlots, [allSlots]);
+  // FIXED: this previously just returned allSlots unfiltered, so the
+  // Morning / Afternoon / Evening tabs only changed their own highlighted
+  // style and never actually affected which slots were shown. Now it
+  // buckets each slot by its startMin and only keeps the ones matching
+  // the currently active tab.
+  const filteredSlots = useMemo(
+    () => allSlots.filter((slot) => getSlotPeriod(slot.startMin) === activeTab),
+    [allSlots, activeTab]
+  );
 
   const handleNext = () => {
     if (!selectedDate || !selectedTime) return;
