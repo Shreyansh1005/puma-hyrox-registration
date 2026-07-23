@@ -13,7 +13,11 @@ function RegistrationForm() {
     email: '',
     age: '',
     gender: '',
-    registrationType: 'participant', // Default to participant
+    // CHANGED: was 'participant' by default, which silently pre-filled
+    // the field so the placeholder never showed and it was never truly
+    // "required". Now empty, exactly like gender, so the user must
+    // actively pick one.
+    registrationType: '',
     consent: false
   });
 
@@ -47,7 +51,10 @@ function RegistrationForm() {
     e.preventDefault();
 
     // 1. Mandatory Fields Check
+    // CHANGED: added formData.registrationType to the mandatory check,
+    // same as gender, name, email, contact and age.
     if (
+      !formData.registrationType.trim() ||
       !formData.name.trim() ||
       !formData.email.trim() ||
       !formData.rawContact.trim() ||
@@ -200,20 +207,19 @@ function RegistrationForm() {
             </div>
 
             {/* Consent Checkbox */}
-            {/* Consent Checkbox */}
-<div className="form-group full-width consent-row mt-8">
-  <input
-    type="checkbox"
-    id="consent"
-    name="consent"
-    checked={formData.consent}
-    onChange={handleChange}
-    required
-  />
-  <label htmlFor="consent">
-    I agree to the storage and processing of my personal data by PUMA India and HYROX in accordance with the Privacy Policy and Terms & Conditions. <span style={{ color: '#e53e3e' }}>*</span>
-  </label>
-</div>
+            <div className="form-group full-width consent-row mt-8">
+              <input
+                type="checkbox"
+                id="consent"
+                name="consent"
+                checked={formData.consent}
+                onChange={handleChange}
+                required
+              />
+              <label htmlFor="consent">
+                I agree to the storage and processing of my personal data by PUMA India and HYROX in accordance with the Privacy Policy and Terms & Conditions. <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+            </div>
 
             {/* Submit Button */}
             <div className="full-width mt-24">
