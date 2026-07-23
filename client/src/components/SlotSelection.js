@@ -6,15 +6,35 @@ import './theme.css';
 
 const DEFAULT_DATES = ['24 JUL', '25 JUL', '26 JUL'];
 
+const MONTH_MAP = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
+
+const parseSlotDate = (dateStr) => {
+  const now = new Date();
+  const [day, monthStr] = dateStr.trim().split(' ');
+  return new Date(now.getFullYear(), MONTH_MAP[monthStr?.toUpperCase()], parseInt(day, 10));
+};
+
+// Kept for reference / potential future use, but selection logic no longer
+// relies on "past" alone — see checkIsSelectableDate below.
 const checkIsDatePast = (dateStr) => {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return parseSlotDate(dateStr) < today;
+};
 
-  const [day, monthStr] = dateStr.trim().split(' ');
-  const monthMap = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
+// NEW: only "today" is a selectable/bookable date. Anything before or
+// after today is disabled — this is the piece that was missing before.
+const checkIsSelectableDate = (dateStr) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const slotDate = parseSlotDate(dateStr);
+  return slotDate.getTime() === today.getTime();
+};
 
-  const slotDate = new Date(now.getFullYear(), monthMap[monthStr?.toUpperCase()], parseInt(day, 10));
-  return slotDate < today;
+const getTodayLabel = (dates) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return dates.find((d) => parseSlotDate(d).getTime() === today.getTime());
 };
 
 function SlotSelection() {
@@ -37,7 +57,9 @@ function SlotSelection() {
   const [bookedMap, setBookedMap] = useState({});
   const [capacityLimits, setCapacityLimits] = useState({ participant: 1, spectator: 1 });
 
-  const [selectedDate, setSelectedDate] = useState('25 JUL');
+  // No longer hardcoded to '25 JUL' — starts empty and gets set to
+  // today's date once we know what "today" actually is against `dates`.
+  const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [activeTab, setActiveTab] = useState('afternoon');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -73,25 +95,27 @@ function SlotSelection() {
     fetchSlotData();
   }, []);
 
-  // Auto-select first future date
+  // Auto-select TODAY's date only. If today isn't in the `dates` list at
+  // all (event not running today), nothing gets selected and the date
+  // chips are all disabled.
   useEffect(() => {
-    const validDates = dates.filter(d => !checkIsDatePast(d));
-    if (validDates.length > 0 && checkIsDatePast(selectedDate)) {
-      setSelectedDate(validDates[0]);
+    const todayLabel = getTodayLabel(dates);
+    if (todayLabel && selectedDate !== todayLabel) {
+      setSelectedDate(todayLabel);
+    } else if (!todayLabel) {
+      setSelectedDate('');
     }
   }, [dates]);
 
   const isSlotAvailable = (date, slotObj) => {
-    // Past dates - everything unavailable
-    if (checkIsDatePast(date)) return false;
+    // Hard gate: only today's date can ever have available slots,
+    // regardless of capacity numbers.
+    if (!checkIsSelectableDate(date)) return false;
 
-    // Today - disable past time slots
+    // Disable past time slots within today
     const now = new Date();
     const currentMin = now.getHours() * 60 + now.getMinutes();
-
-    if (date === selectedDate && slotObj.startMin <= currentMin) {
-      return false;
-    }
+    if (slotObj.startMin <= currentMin) return false;
 
     // Capacity check
     const userType = (formData.registrationType || 'participant').toLowerCase().trim();
@@ -134,20 +158,23 @@ function SlotSelection() {
             <label className="field-label">Select Date (July 2026)</label>
             <div className="chip-grid center-grid">
               {dates.map((d) => {
-                const isPast = checkIsDatePast(d);
+                const isSelectable = checkIsSelectableDate(d);
                 return (
                   <button
                     key={d}
                     type="button"
-                    disabled={isPast}
-                    className={`chip ${selectedDate === d ? 'selected' : ''} ${isPast ? 'disabled-soldout' : ''}`}
-                    onClick={() => !isPast && setSelectedDate(d)}
+                    disabled={!isSelectable}
+                    className={`chip ${selectedDate === d ? 'selected' : ''} ${!isSelectable ? 'disabled-soldout' : ''}`}
+                    onClick={() => isSelectable && setSelectedDate(d)}
                   >
-                    {d} {isPast && '(CLOSED)'}
+                    {d} {!isSelectable && '(CLOSED)'}
                   </button>
                 );
               })}
             </div>
+            {!getTodayLabel(dates) && (
+              <p className="muted-text mt-8">Registration is not open today.</p>
+            )}
           </div>
 
           {/* Time Slots */}
@@ -162,6 +189,8 @@ function SlotSelection() {
             <div className="compact-slot-grid mt-16">
               {loadingSlots ? (
                 <p className="muted-text">Checking slot availability…</p>
+              ) : !selectedDate ? (
+                <p className="muted-text">No slots available today.</p>
               ) : filteredSlots.length > 0 ? (
                 filteredSlots.map((t) => {
                   const isAvailable = isSlotAvailable(selectedDate, t);

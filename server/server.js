@@ -30,8 +30,8 @@ const { ServerApiVersion } = require('mongodb');
 // CAPACITY CONFIGURATION
 // ----------------------------------------------------
 const CAPACITY_LIMITS = {
-  participant: 1, // Set to 12 for production
-  spectator: 1    // Set to 5 for production
+  participant: 12, // Set to 12 for production
+  spectator: 5    // Set to 5 for production
 };
 
 // ----------------------------------------------------
