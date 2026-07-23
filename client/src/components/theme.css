@@ -29,12 +29,14 @@
 
 * { 
   box-sizing: border-box; 
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body, #root {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--bg);
 }
 
@@ -42,6 +44,12 @@ body {
   font-family: var(--font-body);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  overflow-x: hidden;
 }
 
 /* ==========================================================================
@@ -50,13 +58,16 @@ body {
 
 .app-shell {
   position: relative;
-  min-height: 100vh;
+  min-height: 100vh; 
+  min-height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   color: var(--ink);
   background-color: var(--bg);
+  box-sizing: border-box;
   background-image: 
     repeating-linear-gradient(
       -45deg,
@@ -95,6 +106,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: 24px;
 }
 
 .race-btn {
@@ -112,6 +124,7 @@ body {
   margin: 0 auto;
   box-shadow: 0 8px 20px rgba(15, 92, 83, 0.2);
   transition: all 0.25s ease;
+  cursor: pointer;
 }
 
 .race-btn:hover {
@@ -215,13 +228,13 @@ body {
   width: 100%;
   max-width: 600px;
   padding: 32px 20px;
-  margin: 0 auto;
+  margin: auto 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 40px);
   text-align: center;
+  box-sizing: border-box;
 }
 
 .hero-header {
@@ -471,7 +484,7 @@ p.lede, p.racing-sub {
   border-radius: 12px;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 1rem; /* 16px base prevents iOS auto-zoom */
   font-weight: 600;
   transition: all 0.2s ease;
 }
@@ -667,6 +680,7 @@ p.lede, p.racing-sub {
   gap: 8px;
   max-height: 220px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 2px;
 }
 
@@ -785,6 +799,7 @@ p.lede, p.racing-sub {
   justify-content: center;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   transition: opacity 0.4s ease, visibility 0.4s ease;
 }
@@ -865,7 +880,6 @@ p.lede, p.racing-sub {
 @media (max-width: 480px) {
   .landing-container {
     padding: 24px 16px;
-    min-height: 100vh;
   }
 
   .joint-hero-logo {
@@ -908,4 +922,4 @@ p.lede, p.racing-sub {
     width: 100%;
     font-size: 0.92rem;
   }
-} 
+}
