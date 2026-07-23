@@ -53,9 +53,9 @@ if (process.env.SENDGRID_API_KEY) {
 let twilioClient = null;
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER; // e.g. +1XXXXXXXXXX
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER; // e.g. +1XXXXXXXXXX
 
-if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER) {
+if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
   try {
     twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
     console.log('⚡ Twilio SMS Service initialized!');
@@ -63,7 +63,7 @@ if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER) {
     console.error('❌ Twilio initialization error:', twErr.message);
   }
 } else {
-  console.warn('⚠️ Twilio env vars missing (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER) — SMS disabled.');
+  console.warn('⚠️ Twilio env vars missing (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_PHONE_NUMBER) — SMS disabled.');
 }
 
 // ----------------------------------------------------
@@ -370,7 +370,7 @@ app.post('/api/register', async (req, res) => {
       if (twilioClient && formattedContact) {
         try {
           const smsResult = await twilioClient.messages.create({
-            from: TWILIO_FROM_NUMBER,
+            from: TWILIO_PHONE_NUMBER,
             to: formattedContact,
             body: `PUMA X HYROX: Hi ${name}, your registration as a ${normalizedType.toUpperCase()} is confirmed! Ref: ${referenceId} | ${cleanDate} | ${cleanTimeSlot}`
           });
