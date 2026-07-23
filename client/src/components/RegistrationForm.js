@@ -6,7 +6,6 @@ import './theme.css';
 function RegistrationForm() {
   const navigate = useNavigate();
 
-  // State initialized with rawContact for the input and contact for the formatted payload
   const [formData, setFormData] = useState({
     name: '',
     rawContact: '',
@@ -17,7 +16,6 @@ function RegistrationForm() {
     consent: false
   });
 
-  // Standard input handler for text/select/checkbox
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -26,7 +24,6 @@ function RegistrationForm() {
     }));
   };
 
-  // Specialized phone handler: Allows only digits, caps at 10, auto-prefixes +91
   const handlePhoneChange = (e) => {
     const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
     const formatted = digitsOnly ? `+91${digitsOnly}` : '';
@@ -56,17 +53,13 @@ function RegistrationForm() {
       return;
     }
 
-    // Store registration data in localStorage
     localStorage.setItem('regData', JSON.stringify(formData));
-
-    // Navigate to /slots
     navigate('/slots');
   };
 
   return (
     <div className="app-shell">
       <main className="form-container">
-        {/* Stage 2 for Details */}
         <RaceTrack stage={2} />
 
         <div className="glass-card mt-16">
@@ -89,23 +82,20 @@ function RegistrationForm() {
             </div>
 
             {/* Contact Number with +91 Badge */}
-            {/* Contact Number with +91 Badge */}
-<div className="form-group full-width">
-  <label className="field-label">Contact Number</label>
-  <div className="phone-group-container">
-    <span className="phone-prefix-badge">
-      🇮🇳 +91
-    </span>
-    <input
-      type="tel"
-      className="field phone-field-input"
-      placeholder="873603XXXX"
-      value={formData.rawContact}
-      onChange={handlePhoneChange}
-      required
-    />
-  </div>
-</div>
+            <div className="form-group full-width">
+              <label className="field-label">Contact Number</label>
+              <div className="phone-group-container">
+                <span className="phone-prefix-badge">🇮🇳 +91</span>
+                <input
+                  type="tel"
+                  className="field phone-field-input"
+                  placeholder="873603XXXX"
+                  value={formData.rawContact}
+                  onChange={handlePhoneChange}
+                  required
+                />
+              </div>
+            </div>
 
             {/* Email */}
             <div className="form-group full-width">

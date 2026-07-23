@@ -16,9 +16,9 @@
   --ink: #08120e;
   --muted: #495e54;
 
-  /* Typography */
-  --font-impact: 'Bebas Neue', display, sans-serif;
-  --font-racing: 'Chakra Petch', sans-serif;
+  /* Typography - Updated for FF DIN Condensed */
+  --font-impact: 'FF DIN Condensed', 'DIN Condensed', 'Bebas Neue', sans-serif;
+  --font-racing: 'FF DIN Condensed', 'DIN Condensed', 'Chakra Petch', sans-serif;
   --font-body: 'Space Grotesk', sans-serif;
   --font-mono: 'Space Mono', monospace;
 
@@ -27,7 +27,9 @@
   --grad-text: linear-gradient(135deg, var(--teal-deep) 0%, #1a3328 100%);
 }
 
-* { box-sizing: border-box; }
+* { 
+  box-sizing: border-box; 
+}
 
 html, body, #root {
   margin: 0;
@@ -43,8 +45,50 @@ body {
 }
 
 /* ==========================================================================
-   HIGH-ENERGY VISIBLE RACING BACKGROUND SYSTEM
+   APP SHELL & BACKGROUND
    ========================================================================== */
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image: 
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 25px,
+      rgba(101, 210, 202, 0.08) 25px,
+      rgba(101, 210, 202, 0.08) 50px
+    ),
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+.app-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1000px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(101, 210, 202, 0.25) 0%, rgba(170, 200, 92, 0.15) 45%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-container, .form-container {
+  position: relative;
+  z-index: 1;
+}
+
 /* ==========================================================================
    RACE TRACK STEPPER / STAGE PROGRESS BAR
    ========================================================================== */
@@ -52,7 +96,7 @@ body {
 .stepper-container {
   width: 100%;
   max-width: 580px;
-  margin: 0 auto 28px;
+  margin: 0 auto 24px;
   padding: 0 10px;
 }
 
@@ -63,12 +107,11 @@ body {
   position: relative;
 }
 
-/* Background Connecting Race Line */
 .stepper-track-line {
   position: absolute;
   top: 18px;
-  left: 30px;
-  right: 30px;
+  left: 20px;
+  right: 20px;
   height: 4px;
   background: var(--line);
   z-index: 0;
@@ -77,10 +120,9 @@ body {
 .stepper-track-progress {
   height: 100%;
   background: var(--grad-flow);
-  transition: width 0.4s ease;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Step Nodes */
 .step-node {
   position: relative;
   z-index: 1;
@@ -101,7 +143,7 @@ body {
   justify-content: center;
   font-family: var(--font-racing);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--muted);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -122,7 +164,7 @@ body {
 
 .step-label {
   font-family: var(--font-racing);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -133,50 +175,6 @@ body {
 
 .step-node.active .step-label {
   color: var(--teal-deep);
-}
-.app-shell {
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--ink);
-  background-color: var(--bg);
-  /* Pure CSS Dynamic Background Pattern */
-  background-image: 
-    /* High-energy Speed Stripes */
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 25px,
-      rgba(101, 210, 202, 0.08) 25px,
-      rgba(101, 210, 202, 0.08) 50px
-    ),
-    /* Racing Telemetry Grid Lines */
-    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-}
-
-/* Ambient Radial Glows */
-.app-shell::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 1000px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(101, 210, 202, 0.25) 0%, rgba(170, 200, 92, 0.15) 45%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.landing-container, .form-container {
-  position: relative;
-  z-index: 1;
 }
 
 /* ==========================================================================
@@ -207,7 +205,7 @@ body {
 
 .eyebrow {
   font-family: var(--font-racing);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--teal-deep);
   background: rgba(101, 210, 202, 0.25);
@@ -246,7 +244,6 @@ p.lede, p.racing-sub {
   margin: 16px auto 0;
 }
 
-/* Graphic Hero Container Card */
 .graphic-hero-card {
   position: relative;
   width: 100%;
@@ -267,7 +264,7 @@ p.lede, p.racing-sub {
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-racing);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--muted);
   letter-spacing: 0.1em;
@@ -300,9 +297,9 @@ p.lede, p.racing-sub {
 
 .station-title {
   font-family: var(--font-racing);
-  font-size: 2.2rem;
+  font-size: 2.4rem;
   margin: 0;
-  font-style: italic;
+  text-transform: uppercase;
   color: var(--teal-deep);
   font-weight: 700;
 }
@@ -311,16 +308,14 @@ p.lede, p.racing-sub {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-racing);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--muted);
 }
 
-/* Buttons */
 .btn {
   font-family: var(--font-racing);
-  font-size: 1rem;
-  font-style: italic;
+  font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -333,7 +328,7 @@ p.lede, p.racing-sub {
 
 .btn-lg {
   padding: 18px 48px;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
 }
 
 .btn-primary {
@@ -350,7 +345,7 @@ p.lede, p.racing-sub {
 .btn-block { width: 100%; }
 
 /* ==========================================================================
-   FORM PAGES (Registration, Slot Selection, Review, Success)
+   FORM PAGES & CONTROLS
    ========================================================================== */
 
 .form-container {
@@ -359,7 +354,6 @@ p.lede, p.racing-sub {
   padding: 30px 20px 60px;
 }
 
-/* High-Contrast Glass Card */
 .glass-card {
   position: relative;
   width: 100%;
@@ -379,7 +373,6 @@ p.lede, p.racing-sub {
   background: var(--grad-flow);
 }
 
-/* Form Controls & Grid */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -397,7 +390,7 @@ p.lede, p.racing-sub {
 
 .field-label {
   font-family: var(--font-racing);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -425,6 +418,60 @@ p.lede, p.racing-sub {
   box-shadow: 0 0 0 4px rgba(101, 210, 202, 0.25);
 }
 
+/* Phone Field Container */
+.phone-group-container {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.phone-prefix-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+  color: var(--teal-deep);
+  font-family: var(--font-racing);
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.field.phone-field-input {
+  border-radius: 0 12px 12px 0 !important;
+  flex: 1;
+}
+
+.phone-group-container:focus-within .phone-prefix-badge {
+  background: #ffffff;
+  border-color: var(--teal-deep);
+}
+
+/* Select Dropdown */
+.select-field {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%230f5c53' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.select-field option {
+  background-color: #ffffff;
+  color: var(--ink);
+  font-weight: 600;
+  padding: 10px;
+}
+
 .consent-row {
   display: flex;
   align-items: flex-start;
@@ -441,17 +488,27 @@ p.lede, p.racing-sub {
   accent-color: var(--teal-deep);
 }
 
-/* Slots Selection Grid & Chips */
-.chip-grid {
+/* ==========================================================================
+   SLOTS & TABS SELECTION
+   ========================================================================== */
+
+.chip-grid.center-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.chip-grid.center-grid .chip {
+  flex: 1;
+  text-align: center;
+  padding: 10px 4px !important;
+  font-size: 0.95rem !important;
 }
 
 .chip {
   font-family: var(--font-racing);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
   padding: 12px 20px;
   border-radius: 999px;
@@ -474,9 +531,58 @@ p.lede, p.racing-sub {
   box-shadow: 0 6px 16px -3px rgba(170, 200, 92, 0.6);
 }
 
-/* Summary Rows for Review Page */
+.slot-tabs {
+  display: flex;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 99px;
+  padding: 3px;
+  gap: 2px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 99px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-racing);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.tab-btn.active {
+  background: var(--surface);
+  color: var(--teal-deep);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.compact-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.slot-chip {
+  width: 100%;
+  font-size: 0.85rem !important;
+  padding: 8px 4px !important;
+  text-align: center;
+  line-height: 1.2;
+}
+
 /* ==========================================================================
-   SUMMARY ROWS FOR REVIEW PAGE (MOBILE & DESKTOP OPTIMIZED)
+   REVIEW SUMMARY & PASS STYLES
    ========================================================================== */
 
 .summary-list {
@@ -488,8 +594,8 @@ p.lede, p.racing-sub {
 .summary-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Keeps label aligned to top if value wraps */
-  gap: 12px;               /* Ensures mandatory spacing between label and value */
+  align-items: flex-start;
+  gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
 }
@@ -500,11 +606,11 @@ p.lede, p.racing-sub {
 
 .summary-label {
   font-family: var(--font-racing);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   text-transform: uppercase;
-  flex-shrink: 0;          /* Prevents label from shrinking/squishing */
-  min-width: 80px;         /* Standardized width for clean alignment */
+  flex-shrink: 0;
+  min-width: 80px;
   padding-top: 2px;
 }
 
@@ -513,28 +619,11 @@ p.lede, p.racing-sub {
   font-weight: 700;
   color: var(--teal-deep);
   text-align: right;
-  flex: 1;                 /* Allows value to take remaining width */
-  overflow-wrap: anywhere; /* Allows long email strings to wrap smoothly */
+  flex: 1;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
-/* Responsive adjustment for extra small screens */
-@media (max-width: 480px) {
-  .summary-row {
-    flex-direction: column; /* Stack label & value vertically on narrow screens */
-    align-items: flex-start;
-    gap: 4px;
-    padding: 10px 0;
-  }
-
-  .summary-value {
-    text-align: left;
-    width: 100%;
-    font-size: 0.92rem;    /* Slightly tighter font for mobile alignment */
-  }
-}
-
-/* Pass / Success Styles */
 .race-pass-card {
   background: var(--surface-2);
   border: 2px dashed var(--teal-deep);
@@ -547,33 +636,15 @@ p.lede, p.racing-sub {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-racing);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--muted);
   border-bottom: 1px solid var(--line);
   padding-bottom: 10px;
 }
 
-.pass-id {
-  font-family: var(--font-impact);
-  font-size: 2.2rem;
-  letter-spacing: 2px;
-  color: var(--teal-deep);
-}
-
-/* Utilities */
-.center { text-align: center; }
-.mt-8 { margin-top: 8px; }
-.mt-16 { margin-top: 16px; }
-.mt-24 { margin-top: 24px; }
-.mt-32 { margin-top: 32px; }
-
-@media (max-width: 600px) {
-  .form-grid { grid-template-columns: 1fr; }
-  .full-width, .half-width { grid-column: span 1; }
-}
 /* ==========================================================================
-   PRELOADER OVERLAY & LOGO RESTRAINTS
+   PRELOADER OVERLAY
    ========================================================================== */
 
 .preloader-overlay {
@@ -606,20 +677,12 @@ p.lede, p.racing-sub {
   width: 90%;
 }
 
-/* FIX: Constrain giant Puma logo image */
 .preloader-logo {
   width: auto;
-  height: 48px; /* Fixed controlled height */
+  height: 48px;
   max-width: 160px;
   object-fit: contain;
   margin-bottom: 24px;
-}
-
-.countdown-container {
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .countdown-number {
@@ -647,239 +710,46 @@ p.lede, p.racing-sub {
 
 .preloader-status {
   font-family: var(--font-racing);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--muted);
 }
-/* Custom Styled Dropdown List */
-.select-field {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg fill='%20f5c53' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 18px;
-  padding-right: 40px;
-  cursor: pointer;
-}
 
-.select-field option {
-  background-color: #ffffff;
-  color: var(--ink);
-  font-weight: 600;
-  padding: 10px;
-}
-
-/* Stepper Alignment & Connectors */
-.stepper-container {
-  width: 100%;
-  max-width: 580px;
-  margin: 0 auto 24px;
-}
-
-.stepper-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-}
-
-.stepper-track-line {
-  position: absolute;
-  top: 18px;
-  left: 20px;
-  right: 20px;
-  height: 4px;
-  background: var(--line);
-  z-index: 0;
-}
-
-.stepper-track-progress {
-  height: 100%;
-  background: var(--grad-flow);
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.step-node {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.step-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--surface);
-  border: 2px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-racing);
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--muted);
-  transition: all 0.3s ease;
-}
-
-.step-node.active .step-circle {
-  border-color: var(--teal-deep);
-  background: var(--grad-flow);
-  color: var(--ink);
-  transform: scale(1.15);
-  box-shadow: 0 0 15px rgba(101, 210, 202, 0.5);
-}
-
-.step-node.completed .step-circle {
-  background: var(--teal-deep);
-  border-color: var(--teal-deep);
-  color: #ffffff;
-}
-
-.step-label {
-  font-family: var(--font-racing);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-top: 8px;
-}
-
-.step-node.active .step-label {
-  color: var(--teal-deep);
-}
 /* ==========================================================================
-   PHONE INPUT GROUP ALIGNMENT & STYLING
+   UTILITIES & MEDIA QUERIES
    ========================================================================== */
 
-.phone-group-container {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
+.center { text-align: center; }
+.muted-text { color: var(--muted); font-size: 0.85rem; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .full-width, .half-width { grid-column: span 1; }
 }
 
-.phone-prefix-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 16px;
-  background: var(--surface-2);
-  border: 1.5px solid var(--line);
-  border-right: none;
-  border-radius: 12px 0 0 12px;
-  color: var(--teal-deep);
-  font-family: var(--font-racing);
-  font-weight: 700;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.field.phone-field-input {
-  border-radius: 0 12px 12px 0 !important;
-  flex: 1;
-}
-
-/* Match container highlight when phone input is focused */
-.phone-group-container:focus-within .phone-prefix-badge {
-  background: #ffffff;
-  border-color: var(--teal-deep);
-}
-/* ==========================================================================
-   MOBILE-OPTIMIZED SLOT & TAB LAYOUT (FIX FOR 360px SCREEN CUTOFFS)
-   ========================================================================== */
-
-/* 1. Date Grid: Force 3 dates in a single clean row */
-.chip-grid.center-grid {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: nowrap; /* Prevents 26 JUL from dropping to line 2 */
-}
-
-.chip-grid.center-grid .chip {
-  flex: 1;
-  text-align: center;
-  padding: 10px 4px !important;
-  font-size: 0.85rem !important;
-}
-
-/* 2. Slot Tabs: Fix Evening text cut-off on small screens */
-.slot-tabs {
-  display: flex;
-  background: var(--surface-2);
-  border: 1.5px solid var(--line);
-  border-radius: 99px;
-  padding: 3px;
-  gap: 2px;
-  margin-top: 6px;
-  width: 100%;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 8px 4px; /* Reduced horizontal padding */
-  border-radius: 99px;
-  border: none;
-  background: transparent;
-  font-family: var(--font-racing);
-  font-size: 0.75rem; /* Slightly tighter font for 360px phones */
-  font-weight: 700;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.tab-btn.active {
-  background: var(--surface);
-  color: var(--teal-deep);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-/* 3. Compact Slots & Card Spacing: Fits entirely on phone screen without cutoff */
-.compact-slot-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  max-height: 180px; /* Controlled height so button stays visible */
-  overflow-y: auto;
-  padding: 2px;
-}
-
-.slot-chip {
-  width: 100%;
-  font-size: 0.75rem !important;
-  padding: 8px 4px !important;
-  text-align: center;
-  line-height: 1.2;
-}
-
-/* Reduce mobile glass card vertical padding so the confirm button fits on screen */
 @media (max-width: 480px) {
-  .form-container {
-    padding: 12px 12px 24px;
-  }
-
-  .glass-card {
-    padding: 20px 16px !important;
-  }
-
+  .form-container { padding: 12px 12px 24px; }
+  .glass-card { padding: 20px 16px !important; }
   .mt-24 { margin-top: 14px !important; }
   .mt-32 { margin-top: 18px !important; }
-
-  .station-title {
-    font-size: 1.8rem !important;
+  .station-title { font-size: 2rem !important; }
+  .lede { font-size: 0.9rem !important; margin-top: 6px !important; }
+  
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 0;
   }
 
-  .lede {
-    font-size: 0.9rem !important;
-    margin-top: 6px !important;
+  .summary-value {
+    text-align: left;
+    width: 100%;
+    font-size: 0.92rem;
   }
 }

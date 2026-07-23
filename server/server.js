@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 if (process.env.NODE_ENV !== 'production') {
   const envPath = path.join(__dirname, '.env');
   const envResult = dotenv.config({ path: envPath });
-  console.log(`🔍 Checking local .env file at: ${envPath}`);
+  console.log(`Checking local .env file at: ${envPath}`);
   if (envResult.error) {
     console.warn("⚠️ Local .env file not found or failed to load. Falling back to environment variables.");
   } else {
@@ -21,7 +21,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const twilio = require('twilio');
-const sgMail = require('@sendgrid/mail'); // SendGrid Package Integration
+const sgMail = require('@sendgrid/mail');
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getMessaging } = require('firebase-admin/messaging');
 const { ServerApiVersion } = require('mongodb');
@@ -37,7 +37,7 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 // ----------------------------------------------------
-// FIREBASE ADMIN INITIALIZATION (Modular API)
+// FIREBASE ADMIN INITIALIZATION
 // ----------------------------------------------------
 console.log("👉 STARTING FIREBASE SETUP...");
 
@@ -48,11 +48,6 @@ let FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
 if (FIREBASE_PRIVATE_KEY) {
   FIREBASE_PRIVATE_KEY = FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 }
-
-console.log("Checking Firebase Env Keys:");
-console.log(" - FIREBASE_PROJECT_ID:", FIREBASE_PROJECT_ID ? "LOADED" : "MISSING");
-console.log(" - FIREBASE_CLIENT_EMAIL:", FIREBASE_CLIENT_EMAIL ? "LOADED" : "MISSING");
-console.log(" - FIREBASE_PRIVATE_KEY:", FIREBASE_PRIVATE_KEY ? "LOADED" : "MISSING");
 
 let firebaseInitialized = false;
 
@@ -90,7 +85,7 @@ app.use(bodyParser.json());
 // MONGOOSE DB CONNECTION
 // ----------------------------------------------------
 if (!process.env.MONGO_URI) {
-  console.error("❌ Error: MONGO_URI is not defined in your environment variables.");
+  console.error("❌ Error: MONGO_URI is not defined in environment variables.");
   process.exit(1);
 }
 
@@ -105,7 +100,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // ----------------------------------------------------
-// REGISTRATION SCHEMA & MODEL
+// SCHEMA & MODEL
 // ----------------------------------------------------
 const registrationSchema = new mongoose.Schema(
   {
@@ -128,15 +123,13 @@ const registrationSchema = new mongoose.Schema(
 const Registration = mongoose.model('Registration', registrationSchema);
 
 // ----------------------------------------------------
-// API ROUTES
+// ROUTES
 // ----------------------------------------------------
 
-// Health Check Endpoint
 app.get('/', (req, res) => {
   res.status(200).send('⚡ PUMA X HYROX API Service is Running.');
 });
 
-// GET Registration Details by Reference ID
 app.get('/api/registration/:referenceId', async (req, res) => {
   try {
     const { referenceId } = req.params;
@@ -158,13 +151,11 @@ app.post('/api/register', async (req, res) => {
     const { name, contact, email, age, gender, date, timeSlot, fcmToken } = req.body;
     const referenceId = 'PUMA-HYROX-' + Date.now().toString().slice(-6);
 
-    // Safeguard: Format contact number to E.164 (+91...)
     let formattedContact = contact ? contact.toString().trim() : '';
     if (formattedContact && !formattedContact.startsWith('+')) {
       formattedContact = `+91${formattedContact.replace(/\D/g, '')}`;
     }
 
-    // 1. Save to MongoDB first
     const newReg = new Registration({
       name,
       contact: formattedContact,
@@ -178,29 +169,24 @@ app.post('/api/register', async (req, res) => {
 
     await newReg.save();
 
-    // 2. RESPOND IMMEDIATELY TO FRONTEND
+    // Respond immediately to frontend
     res.status(201).json({
       message: 'Registered successfully',
       referenceId,
       data: newReg
     });
 
-    // 3. SEND NOTIFICATIONS ASYNCHRONOUSLY IN BACKGROUND
+    // Background Async Tasks
     (async () => {
       console.log(`📨 Starting background notifications for ${referenceId}`);
 
-      // --------------------------------------------------
-      // A. SendGrid Email Dispatch
-      // --------------------------------------------------
-      // --------------------------------------------------
-      // A. SendGrid Email Dispatch
-      // --------------------------------------------------
+      // SendGrid Email
       if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
         try {
           const emailData = {
             to: email,
             from: {
-              email:'pumaXhyrox@catalystinfomedia.com',
+              email: process.env.SENDGRID_FROM_EMAIL,
               name: 'PUMA X HYROX'
             },
             subject: '⚡ Your PUMA X HYROX Registration Pass',
@@ -221,13 +207,11 @@ app.post('/api/register', async (req, res) => {
                             <h2 style="color: #0f5c53; font-style: italic; margin-top: 0; font-size: 28px;">PUMA X HYROX</h2>
                             <p style="font-size: 15px; color: #08120e;">Hi <strong>${name}</strong>,</p>
                             <p style="font-size: 15px; color: #495e54;">Your registration is confirmed! Below are your station details:</p>
-                            
                             <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #e8f0eb; border: 2px dashed #0f5c53; border-radius: 10px; padding: 16px; margin: 20px 0;">
                               <tr><td style="padding: 6px 0; font-family: monospace;"><strong>REFERENCE:</strong> ${referenceId}</td></tr>
                               <tr><td style="padding: 6px 0; font-family: monospace;"><strong>DATE:</strong> ${date}</td></tr>
                               <tr><td style="padding: 6px 0; font-family: monospace;"><strong>SLOT TIME:</strong> ${timeSlot}</td></tr>
                             </table>
-
                             <p style="font-size: 13px; color: #495e54;">Please report to the venue 15 minutes prior to your time slot.</p>
                           </td>
                         </tr>
@@ -239,23 +223,14 @@ app.post('/api/register', async (req, res) => {
               </html>
             `
           };
-
           await sgMail.send(emailData);
-          console.log(`✅ SendGrid Email sent successfully to ${email}`);
+          console.log(`✅ SendGrid Email sent to ${email}`);
         } catch (err) {
-          console.error('❌ SendGrid Email Error Message:', err.message);
-          if (err.response && err.response.body) {
-            console.error('❌ SendGrid Error Details:', JSON.stringify(err.response.body.errors, null, 2));
-          }
+          console.error('❌ SendGrid Error:', err.message);
         }
-      } else {
-        console.warn('⚠️ SendGrid Skipping: SENDGRID_API_KEY or SENDGRID_FROM_EMAIL is missing from env variables.');
-        console.warn(`   - SENDGRID_API_KEY Present: ${!!process.env.SENDGRID_API_KEY}`);
-        console.warn(`   - SENDGRID_FROM_EMAIL Present: ${!!process.env.SENDGRID_FROM_EMAIL}`);
       }
-      // --------------------------------------------------
-      // B. FCM Push
-      // --------------------------------------------------
+
+      // FCM Push
       if (fcmToken && firebaseInitialized) {
         try {
           await getMessaging().send({
@@ -272,82 +247,57 @@ app.post('/api/register', async (req, res) => {
         }
       }
 
-      // --------------------------------------------------
-      // C. Lead Creation via MailBluster API
-      // --------------------------------------------------
+      // MailBluster Integration
       const mailblusterKey = process.env.MAILBLUSTER_API_KEY ? process.env.MAILBLUSTER_API_KEY.trim() : '';
       if (mailblusterKey) {
         try {
           await axios.post(
             'https://api.mailbluster.com/api/leads',
             {
-              email: email,
+              email,
               subscribed: true,
               firstName: name,
-              meta: {
-                phone: formattedContact,
-                age: age,
-                gender: gender,
-                referenceId: referenceId,
-                sessionDate: date,
-                timeSlot: timeSlot
-              },
+              meta: { phone: formattedContact, age, gender, referenceId, sessionDate: date, timeSlot },
               tags: ['PUMA HYROX 2026']
             },
-            {
-              headers: {
-                'Authorization': mailblusterKey,
-                'Content-Type': 'application/json'
-              }
-            }
+            { headers: { 'Authorization': mailblusterKey, 'Content-Type': 'application/json' } }
           );
-          console.log('✅ MailBluster Lead created successfully');
+          console.log('✅ MailBluster Lead created');
         } catch (err) {
           console.error('❌ MailBluster Error:', err.response?.data || err.message);
         }
-      } else {
-        console.warn('⚠️ MAILBLUSTER_API_KEY not found in environment variables');
       }
 
-      // --------------------------------------------------
-      // D. SMS with Twilio
-      // --------------------------------------------------
+      // Twilio SMS
       if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
         try {
           const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
           await client.messages.create({
             body: `Hi ${name}, your PUMA X HYROX booking is confirmed! Ref: ${referenceId} | Date: ${date} | Time: ${timeSlot}`,
             from: process.env.TWILIO_PHONE_NUMBER,
             to: formattedContact
           });
-          console.log('✅ Twilio SMS sent successfully to:', formattedContact);
+          console.log('✅ Twilio SMS sent to:', formattedContact);
         } catch (err) {
           console.error('❌ Twilio SMS Error:', err.message);
         }
-      } else {
-        console.warn('⚠️ Twilio credentials missing');
       }
 
-      console.log(`✅ Background notifications finished for ${referenceId}`);
-    })().catch(bgErr => {
-  console.error('❌ Critical Background Job Error:', bgErr);
-});
+      console.log(`✅ Background notifications completed for ${referenceId}`);
+    })().catch(bgErr => console.error('❌ Background Job Error:', bgErr));
 
   } catch (err) {
-    console.error('❌ Registration Endpoint Error:', err);
+    console.error('❌ Registration Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Function to generate slots on backend
 function generateSlots() {
   const times = [];
-  let current = 10 * 60; // 10:00 AM
-  const end = 21 * 60;   // 09:00 PM
+  let current = 10 * 60;
+  const end = 21 * 60;
 
   while (current + 15 <= end) {
-    // Skip 1:00 PM - 2:00 PM
     if (current >= 13 * 60 && current + 15 <= 14 * 60) {
       current = 14 * 60;
       continue;
@@ -362,7 +312,7 @@ function generateSlots() {
     };
 
     times.push(`${format(current)} - ${format(current + 15)}`);
-    current += 20; // 15 min slot + 5 min interval
+    current += 20;
   }
 
   return times;
