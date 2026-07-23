@@ -451,6 +451,30 @@ p.lede, p.racing-sub {
 
 .btn-block { width: 100%; }
 
+/* Centers a button reliably on phone/iOS. .race-btn uses
+   display:inline-flex + margin:0 auto for centering, but auto-margins
+   only center BLOCK-level elements — they're silently ignored on
+   inline-flex, so the button was never actually centered unless its
+   parent used justify-content:center (like .cta-group on the landing
+   page). This wrapper does that for any button placed inside it. */
+.button-center-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Static, non-interactive replacement for a disabled <select> — looks
+   like a normal locked field instead of a dropdown (no chevron icon,
+   no pointer cursor, not focusable/clickable). */
+.locked-field {
+  display: flex;
+  align-items: center;
+  cursor: default;
+  user-select: none;
+  background: var(--surface-2);
+  opacity: 0.85;
+}
+
 /* ==========================================================================
    FORM PAGES & CONTROLS
    ========================================================================== */

@@ -25,6 +25,7 @@ const sgMail = require('@sendgrid/mail');
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getMessaging } = require('firebase-admin/messaging');
 const { ServerApiVersion } = require('mongodb');
+const ExcelJS = require('exceljs');
 
 // ----------------------------------------------------
 // CAPACITY CONFIGURATION
@@ -402,5 +403,172 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ----------------------------------------------------
+// ADMIN EXPORT: Download all registrations as an Excel file
+// ----------------------------------------------------
+// NEW. Protected by a shared secret key (ADMIN_EXPORT_KEY env var),
+// passed as a query param: /api/admin/export?key=YOUR_SECRET
+// Since there's no admin panel/login system, this is the simplest way
+// to gate the endpoint so a random visitor can't just download every
+// registrant's name/phone/email by guessing the URL.
+app.get('/api/admin/export', async (req, res) => {
+  try {
+    const providedKey = req.query.key;
+    const expectedKey = process.env.ADMIN_EXPORT_KEY;
+
+    if (!expectedKey) {
+      return res.status(500).json({ error: 'ADMIN_EXPORT_KEY is not configured on the server.' });
+    }
+    if (!providedKey || providedKey !== expectedKey) {
+      return res.status(401).json({ error: 'Unauthorized. Provide the correct ?key=... query parameter.' });
+    }
+
+    const registrations = await Registration.find({}).sort({ createdAt: -1 }).lean();
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'PUMA X HYROX Registration System';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Registrations');
+
+    sheet.columns = [
+      { header: 'Reference ID', key: 'referenceId', width: 16 },
+      { header: 'Name', key: 'name', width: 24 },
+      { header: 'Contact', key: 'contact', width: 16 },
+      { header: 'Email', key: 'email', width: 28 },
+      { header: 'Age', key: 'age', width: 8 },
+      { header: 'Gender', key: 'gender', width: 10 },
+      { header: 'Registration Type', key: 'registrationType', width: 18 },
+      { header: 'Date', key: 'date', width: 12 },
+      { header: 'Time Slot', key: 'timeSlot', width: 20 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Registered At', key: 'createdAt', width: 22 },
+    ];
+
+    // Bold header row
+    sheet.getRow(1).font = { bold: true };
+    sheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE8F0EB' }
+    };
+
+    registrations.forEach((r) => {
+      sheet.addRow({
+        referenceId: r.referenceId || '',
+        name: r.name || '',
+        contact: r.contact || '',
+        email: r.email || '',
+        age: r.age ?? '',
+        gender: r.gender || '',
+        registrationType: (r.registrationType || 'participant').toUpperCase(),
+        date: r.sessionDetails?.date || '',
+        timeSlot: r.sessionDetails?.timeSlot || '',
+        status: r.status || '',
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+      });
+    });
+
+    const filename = `puma-hyrox-registrations-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+    console.log(`📊 Admin export: ${registrations.length} registrations downloaded.`);
+  } catch (err) {
+    console.error('❌ Admin Export Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Minimal one-page admin download screen (no framework/build needed).
+// Visit https://your-backend-url/admin, enter the key, click download.
+app.get('/admin', (req, res) => {
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>PUMA X HYROX — Admin Export</title>
+      <style>
+        body {
+          font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          background: #f2f6f3;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          margin: 0;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+        .card {
+          background: #ffffff;
+          border-radius: 16px;
+          padding: 32px 28px;
+          max-width: 360px;
+          width: 100%;
+          box-shadow: 0 20px 45px -10px rgba(8,18,14,0.12);
+          text-align: center;
+        }
+        h1 { font-size: 1.3rem; color: #0f5c53; margin: 0 0 8px; }
+        p { color: #495e54; font-size: 0.9rem; margin: 0 0 20px; }
+        input {
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: 10px;
+          border: 1.5px solid #d2ded6;
+          font-size: 1rem;
+          box-sizing: border-box;
+          margin-bottom: 16px;
+        }
+        button {
+          width: 100%;
+          padding: 12px 20px;
+          border: none;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #65D2CA 0%, #AAC85C 50%, #F2CB40 100%);
+          font-weight: 700;
+          font-size: 0.95rem;
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+        #status { margin-top: 14px; font-size: 0.85rem; color: #495e54; min-height: 18px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <h1>Registrations Export</h1>
+        <p>Enter the admin key to download the full registration list as an Excel file.</p>
+        <input type="password" id="adminKey" placeholder="Admin key" />
+        <button onclick="downloadExport()">⬇ Download Excel Report</button>
+        <div id="status"></div>
+      </div>
+      <script>
+        function downloadExport() {
+          const key = document.getElementById('adminKey').value.trim();
+          const statusEl = document.getElementById('status');
+          if (!key) {
+            statusEl.textContent = 'Please enter the admin key.';
+            return;
+          }
+          statusEl.textContent = 'Preparing download…';
+          window.location.href = '/api/admin/export?key=' + encodeURIComponent(key);
+          setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        }
+      </script>
+    </body>
+    </html>
+  `);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

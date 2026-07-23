@@ -172,10 +172,11 @@ function SlotSelection() {
 
           <div className="mt-16 text-left">
             <label className="field-label">Registration Type</label>
-            <select className="field select-field" value={formData.registrationType} disabled>
-              <option value="participant">🏃 PARTICIPANT</option>
-              <option value="spectator">👀 SPECTATOR</option>
-            </select>
+            <div className="field locked-field">
+              {(formData.registrationType || 'participant').toLowerCase().trim() === 'spectator'
+                ? '👀 SPECTATOR'
+                : '🏃 PARTICIPANT'}
+            </div>
             <small style={{color: '#666', fontSize: '0.8rem'}}>Type cannot be changed after Station 01</small>
           </div>
 
@@ -241,9 +242,9 @@ function SlotSelection() {
             </div>
           </div>
 
-          <div className="mt-32">
+          <div className="mt-32 button-center-row">
             <button
-              className="btn btn-primary race-btn btn-block"
+              className="btn btn-primary race-btn"
               disabled={!selectedDate || !selectedTime}
               onClick={handleNext}
             >

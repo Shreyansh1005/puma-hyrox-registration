@@ -222,8 +222,8 @@ function RegistrationForm() {
             </div>
 
             {/* Submit Button */}
-            <div className="full-width mt-24">
-              <button type="submit" className="btn btn-primary btn-block race-btn">
+            <div className="full-width mt-24 button-center-row">
+              <button type="submit" className="btn btn-primary race-btn">
                 NEXT: SELECT SLOT →
               </button>
             </div>
