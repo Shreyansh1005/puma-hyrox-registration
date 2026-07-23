@@ -45,6 +45,28 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 // ----------------------------------------------------
+// TWILIO INITIALIZATION
+// ----------------------------------------------------
+// NEW: this was the missing piece. `twilio` was required at the top of
+// the file but never turned into a client and never called anywhere,
+// so no SMS could ever be sent regardless of what env vars you set.
+let twilioClient = null;
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER; // e.g. +1XXXXXXXXXX
+
+if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_FROM_NUMBER) {
+  try {
+    twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+    console.log('⚡ Twilio SMS Service initialized!');
+  } catch (twErr) {
+    console.error('❌ Twilio initialization error:', twErr.message);
+  }
+} else {
+  console.warn('⚠️ Twilio env vars missing (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER) — SMS disabled.');
+}
+
+// ----------------------------------------------------
 // FIREBASE ADMIN INITIALIZATION
 // ----------------------------------------------------
 let firebaseInitialized = false;
@@ -305,7 +327,7 @@ app.post('/api/register', async (req, res) => {
       data: newReg
     });
 
-    // Background Notifications (unchanged)
+    // Background Notifications
     (async () => {
       console.log(`📨 Starting background notifications for ${referenceId}`);
 
@@ -341,6 +363,25 @@ app.post('/api/register', async (req, res) => {
         }
       }
 
+      // NEW: this block is the actual fix. Previously `twilio` was
+      // imported but never used anywhere, so no SMS was ever sent no
+      // matter what env vars existed. Now, if the client initialized
+      // successfully above and we have a contact number, we send one.
+      if (twilioClient && formattedContact) {
+        try {
+          const smsResult = await twilioClient.messages.create({
+            from: TWILIO_FROM_NUMBER,
+            to: formattedContact,
+            body: `PUMA X HYROX: Hi ${name}, your registration as a ${normalizedType.toUpperCase()} is confirmed! Ref: ${referenceId} | ${cleanDate} | ${cleanTimeSlot}`
+          });
+          console.log(`✅ SMS sent to ${formattedContact} (SID: ${smsResult.sid})`);
+        } catch (err) {
+          console.error('❌ Twilio SMS Error:', err.message);
+        }
+      } else if (!twilioClient) {
+        console.warn('⚠️ Skipped SMS: Twilio client not initialized (check env vars).');
+      }
+
       if (fcmToken && firebaseInitialized) {
         try {
           await getMessaging().send({
@@ -363,4 +404,3 @@ app.post('/api/register', async (req, res) => {
 });
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-            
