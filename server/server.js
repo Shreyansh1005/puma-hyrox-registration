@@ -431,8 +431,10 @@ app.post('/api/register', async (req, res) => {
           await sgMail.send(emailData);
           console.log(`✅ Email sent to ${email}`);
         } catch (err) {
-          console.error('❌ SendGrid Error:', err.message);
-        }
+           console.error('❌ SendGrid Error:', err.message);
+          if (err.response && err.response.body) {
+            console.error('❌ SendGrid Error Details:', JSON.stringify(err.response.body, null, 2));
+        }}
       }
 
       // NEW: this block is the actual fix. Previously `twilio` was
