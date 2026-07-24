@@ -187,6 +187,58 @@ function generateSlots() {
 }
 
 // ----------------------------------------------------
+// HELPER: Get capacity limit based on date + time (for today's remaining slots)
+// ----------------------------------------------------
+// FIXED VERSION:
+// - Today (24 JUL): slots at/before 4:35 PM stay at original limits (12/5).
+//   Slots strictly AFTER 4:35 PM get the increased limits (17/10),
+//   regardless of what time it is right now when someone loads the page
+//   or registers (the cutoff is a fixed point in time, not "current time").
+// - Tomorrow onward (25 JUL, 26 JUL): always back to original limits (12/5).
+function getCapacityLimit(registrationType, date, timeSlot) {
+  const normalizedType = (registrationType || 'participant').toLowerCase().trim();
+  const today = '24 JUL'; // Today is 24 JUL 2026
+
+  const originalParticipant = 12;
+  const originalSpectator = 5;
+  const increasedParticipant = 17;
+  const increasedSpectator = 10;
+
+  // Any date other than today (25 JUL, 26 JUL, ...) always uses original limits.
+  if (date !== today) {
+    return normalizedType === 'participant' ? originalParticipant : originalSpectator;
+  }
+
+  // No time slot given (shouldn't normally happen) -> original limits.
+  if (!timeSlot) {
+    return normalizedType === 'participant' ? originalParticipant : originalSpectator;
+  }
+
+  // Fixed cutoff: 4:35 PM today, expressed in minutes from midnight.
+  // 4:35 PM = 16*60 + 35 = 995
+  const CUTOFF_MINUTES = 16 * 60 + 35;
+
+  // Parse slot start time (e.g., "04:40 PM - 04:55 PM" -> "04:40 PM")
+  const slotStartStr = timeSlot.split(' - ')[0].trim();
+  let slotHour = parseInt(slotStartStr.split(':')[0]);
+  const slotMinute = parseInt(slotStartStr.split(':')[1].split(' ')[0]);
+  const isPM = slotStartStr.toUpperCase().includes('PM');
+
+  if (isPM && slotHour !== 12) slotHour += 12;
+  if (!isPM && slotHour === 12) slotHour = 0;
+
+  const slotTotalMinutes = slotHour * 60 + slotMinute;
+
+  // Slots strictly after 4:35 PM today get the increased limit.
+  // Slots at or before 4:35 PM keep the original limit.
+  if (slotTotalMinutes > CUTOFF_MINUTES) {
+    return normalizedType === 'participant' ? increasedParticipant : increasedSpectator;
+  } else {
+    return normalizedType === 'participant' ? originalParticipant : originalSpectator;
+  }
+}
+
+// ----------------------------------------------------
 // ROUTES
 // ----------------------------------------------------
 
@@ -222,12 +274,31 @@ app.get('/api/slots', async (req, res) => {
       bookedMap[key] = item.count;
     });
 
+    // NEW: Per-slot dynamic capacity map, so the frontend knows the REAL
+    // limit for each date/slot/type combo (e.g. 17 instead of 12 for
+    // evening slots after 4:35 PM today), instead of relying on the
+    // single static CAPACITY_LIMITS object which can't vary by time.
+    const dates = ['24 JUL', '25 JUL', '26 JUL'];
+    const slotsList = generateSlots();
+    const types = ['participant', 'spectator'];
+
+    const capacityMap = {};
+    dates.forEach(date => {
+      slotsList.forEach(slot => {
+        types.forEach(type => {
+          const key = `${date}_${slot}_${type}`;
+          capacityMap[key] = getCapacityLimit(type, date, slot);
+        });
+      });
+    });
+
     res.json({
       success: true,
       bookedMap,
-      capacityLimits: CAPACITY_LIMITS,
-      slots: generateSlots(),
-      dates: ['24 JUL', '25 JUL', '26 JUL']
+      capacityLimits: CAPACITY_LIMITS, // Kept for backwards compatibility with older frontend builds
+      capacityMap,                     // NEW: use this per-slot value instead of the static one above
+      slots: slotsList,
+      dates
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -274,7 +345,9 @@ app.post('/api/register', async (req, res) => {
     const cleanDate = date ? date.trim() : '';
     const cleanTimeSlot = timeSlot ? timeSlot.trim() : '';
 
-    // 1. Capacity Check
+    // 1. Capacity Check - Use dynamic limit (increased for remaining slots today + future days)
+    const limit = getCapacityLimit(normalizedType, cleanDate, cleanTimeSlot);
+
     const currentCount = await Registration.countDocuments({
       'sessionDetails.date': cleanDate,
       'sessionDetails.timeSlot': cleanTimeSlot,
@@ -284,8 +357,6 @@ app.post('/api/register', async (req, res) => {
       ],
       status: 'confirmed'
     });
-
-    const limit = CAPACITY_LIMITS[normalizedType] ?? 1;
 
     if (currentCount >= limit) {
       return res.status(400).json({ 

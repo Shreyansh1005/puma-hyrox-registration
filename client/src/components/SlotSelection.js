@@ -74,6 +74,10 @@ function SlotSelection() {
   const [allSlots, setAllSlots] = useState([]);
   const [bookedMap, setBookedMap] = useState({});
   const [capacityLimits, setCapacityLimits] = useState({ participant: 1, spectator: 1 });
+  // NEW: per date/slot/type dynamic limit (e.g. 17 instead of 12 for
+  // evening slots after 4:35 PM today). This is what isSlotAvailable
+  // should actually use — capacityLimits above is only a fallback.
+  const [capacityMap, setCapacityMap] = useState({});
 
   // No longer hardcoded to '25 JUL' — starts empty and gets set to
   // today's date once we know what "today" actually is against `dates`.
@@ -86,9 +90,11 @@ function SlotSelection() {
     try {
       setLoadingSlots(true);
       const res = await axios.get('https://puma-hyrox-backend.onrender.com/api/slots');
+      // const res = await axios.get('http://localhost:5000/api/slots');
 
       if (res.data?.dates?.length) setDates(res.data.dates);
       if (res.data?.capacityLimits) setCapacityLimits(res.data.capacityLimits);
+      if (res.data?.capacityMap) setCapacityMap(res.data.capacityMap);
       if (res.data?.bookedMap) setBookedMap(res.data.bookedMap);
 
       if (res.data?.slots?.length) {
@@ -139,7 +145,10 @@ function SlotSelection() {
     const userType = (formData.registrationType || 'participant').toLowerCase().trim();
     const key = `${date.trim()}_${slotObj.label.trim()}_${userType}`;
     const count = bookedMap[key] || 0;
-    const limit = capacityLimits[userType] ?? 1;
+    // Use the per-slot dynamic limit from capacityMap (accounts for the
+    // 4:35 PM cutoff bump to 17/10 today). Fall back to the flat
+    // capacityLimits object only if this specific key is missing.
+    const limit = capacityMap[key] ?? capacityLimits[userType] ?? 1;
 
     return count < limit;
   };
