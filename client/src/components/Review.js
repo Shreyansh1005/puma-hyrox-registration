@@ -55,7 +55,7 @@ function Review() {
   fcmToken: activeToken || null,
 };
 
-      const res = await axios.post('https://puma-hyrox-backend.onrender.com/api/register', payload);
+    const res = await axios.post('https://puma-hyrox-backend.onrender.com/api/register', payload);
       // const res = await axios.post('http://localhost:5000/api/register', payload);
 
       // Clear local cache upon success

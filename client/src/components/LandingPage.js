@@ -38,7 +38,7 @@ function LandingPage() {
           </h1>
 
           <p className="lede racing-sub slam-anim-delayed">
-            BOOK YOUR SLOT, SKIP THE SCRAMBLE, AND GET THOSE CARTS READY. SEE YOU THERE.
+            BOOK YOUR SLOT, SKIP THE SCRAMBLE, AND GET THOSE CARTS READY. SEE YOU THERE.<p><b>"Limited freebies available at the MeowMart. Book the earliest slot."</b></p>
           </p>
 <div className="cta-group mt-32 slam-anim-delayed-2">
   <button className="btn btn-primary race-btn" onClick={() => navigate('/register')}>
